@@ -114,22 +114,21 @@ router.put("/:id", uploadOptions.single("image"), async (req, res) => {
     const fileName = file.filename;
     const basePath = `${req.protocol}://${req.get("host")}/public/uploads/`;
 
-    const doctor = await Doctor.findByIdAndUpdate(
-      req.params.id,
-      {
-        email: req.body.email,
-        passwordHash: bcrypt.hashSync(req.body.password, 10),
-        name: req.body.name,
-        paymnet_valid_till: req.body.paymnet_valid_till,
-        clinic_name: req.body.clinic_name,
-        clinic_address: req.body.clinic_address,
-        image: `${basePath}${fileName}`,
-        free_trial: req.body.free_trial,
-      },
-      {
-        new: true,
-      }
-    );
+    let params = {
+      email: req.body.email,
+      passwordHash: bcrypt.hashSync(req.body.password, 10),
+      name: req.body.name,
+      paymnet_valid_till: req.body.paymnet_valid_till,
+      clinic_name: req.body.clinic_name,
+      clinic_address: req.body.clinic_address,
+      image: `${basePath}${fileName}`,
+      free_trial: req.body.free_trial,
+    };
+    for (let prop in params) if (!params[prop]) delete params[prop];
+
+    const doctor = await Doctor.findByIdAndUpdate(req.params.id, params, {
+      new: true,
+    });
 
     if (!doctor) return res.status(400).send("the doctor cannot be created!");
 
@@ -137,21 +136,20 @@ router.put("/:id", uploadOptions.single("image"), async (req, res) => {
 
     res.status(200).send({ doctor: sanitizeddoctor });
   } else {
-    const doctor = await Doctor.findByIdAndUpdate(
-      req.params.id,
-      {
-        email: req.body.email,
-        passwordHash: bcrypt.hashSync(req.body.password, 10),
-        name: req.body.name,
-        paymnet_valid_till: req.body.paymnet_valid_till,
-        clinic_name: req.body.clinic_name,
-        clinic_address: req.body.clinic_address,
-        free_trial: req.body.free_trial,
-      },
-      {
-        new: true,
-      }
-    );
+    let params = {
+      email: req.body.email,
+      passwordHash: bcrypt.hashSync(req.body.password, 10),
+      name: req.body.name,
+      paymnet_valid_till: req.body.paymnet_valid_till,
+      clinic_name: req.body.clinic_name,
+      clinic_address: req.body.clinic_address,
+      free_trial: req.body.free_trial,
+    };
+    for (let prop in params) if (!params[prop]) delete params[prop];
+
+    const doctor = await Doctor.findByIdAndUpdate(req.params.id, params, {
+      new: true,
+    });
 
     if (!doctor) return res.status(400).send("the doctor cannot be created!");
 

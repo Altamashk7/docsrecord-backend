@@ -53,6 +53,11 @@ const patientSchema = mongoose.Schema({
   date: {
     type: Date,
   },
+  images: [
+    {
+      type: String,
+    },
+  ],
 });
 
 exports.Patient = mongoose.model("Patient", patientSchema);

@@ -9,13 +9,13 @@ app.use(cors());
 app.use(express.urlencoded({ extended: true }));
 const authJwt = require("./helpers/jwt");
 const errorHandler = require("./helpers/error-handler");
-const PORT = "3000" || process.env.PORT;
+const PORT = "3001" || process.env.PORT;
 
 mongoose.connect(process.env.CONNECTION_STRING, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
   useFindAndModify: false,
-  dbName: "docsrecordDB",
+  dbName: "docrecordDB",
 });
 
 const doctorsRouter = require("./routers/doctors");
