@@ -35,6 +35,13 @@ const doctorSchema = mongoose.Schema({
     type: Boolean,
     default: true,
   },
+  visit_charges: {
+    type: Number,
+    default: 0,
+  },
+  timings: {
+    type: String,
+  },
 });
 
 exports.Doctor = mongoose.model("Doctor", doctorSchema);
