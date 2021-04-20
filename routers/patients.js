@@ -4,6 +4,32 @@ const { Doctor } = require("../models/doctor");
 const router = express.Router();
 const mongoose = require("mongoose");
 const { compareSync } = require("bcryptjs");
+const multer = require("multer");
+const _ = require("lodash");
+const FILE_TYPE_MAP = {
+  "image/png": "png",
+  "image/jpeg": "jpeg",
+  "image/jpg": "jpg",
+};
+
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    const isValid = FILE_TYPE_MAP[file.mimetype];
+    let uploadError = new Error("invalid image type");
+
+    if (isValid) {
+      uploadError = null;
+    }
+    cb(uploadError, "public/uploads");
+  },
+  filename: function (req, file, cb) {
+    const fileName = file.originalname.split(" ").join("-");
+    const extension = FILE_TYPE_MAP[file.mimetype];
+    cb(null, `${fileName}-${Date.now()}.${extension}`);
+  },
+});
+
+const uploadOptions = multer({ storage: storage });
 
 router.get(`/`, async (req, res) => {
   // localhost:3000/patients?doctor=2342342
@@ -21,27 +47,142 @@ router.get(`/`, async (req, res) => {
   res.send(patientList);
 });
 
-router.put("/:id", async (req, res) => {
-  const patient = await Patient.findByIdAndUpdate(
-    req.params.id,
-    {
+function convert(str) {
+  var date = new Date(str),
+    mnth = ("0" + (date.getMonth() + 1)).slice(-2),
+    day = ("0" + date.getDate()).slice(-2);
+  return [date.getFullYear(), mnth, day].join("-");
+}
+router.post(`/`, uploadOptions.array("images", 10), async (req, res) => {
+  const files = req.files;
+  let imagesPaths = [];
+  const basePath = `${req.protocol}://${req.get("host")}/public/uploads/`;
+
+  if (files) {
+    files.map((file) => {
+      imagesPaths.push(`${basePath}${file.filename}`);
+    });
+  }
+  var doctorid = mongoose.Types.ObjectId(req.body.doctor);
+  const doctor = await Doctor.findById(doctorid);
+  if (!doctor) return res.status(400).send("Invalid doctor");
+  oldDate = new Date();
+  nextday = new Date(
+    oldDate.getFullYear(),
+    oldDate.getMonth(),
+    oldDate.getDate()
+  );
+  const date = convert(nextday);
+  const datei = new Date();
+  let total_cost = 0;
+  let total_treatments = 0;
+  let treatments = req.body.treatments;
+  if (treatments) {
+    console.log(treatments);
+    // const treatments = req.body.treatments;
+    treatments.forEach(function (obj) {
+      // const issue = obj.issu;
+      let charges = obj.charges;
+      total_cost = total_cost + charges;
+      total_treatments = total_treatments + 1;
+    });
+  }
+
+  let patient = new Patient({
+    email: req.body.email,
+    name: req.body.name,
+    phone_number: req.body.phone_number,
+    age: req.body.age,
+    gender: req.body.gender,
+    address: req.body.address,
+    payment_method: req.body.payment_method,
+
+    total_treatments: total_treatments,
+    total_cost: total_cost,
+    visit_date: date,
+    next_appointmnet_date: req.body.next_appointmnet_date,
+    doctor: doctorid,
+    treatments: req.body.treatments,
+    date: datei,
+    images: imagesPaths,
+  });
+
+  patient = await patient.save();
+
+  if (!patient) return res.status(500).send("The patient cannot be created");
+
+  res.send(patient);
+});
+
+router.put("/:id", uploadOptions.array("images", 10), async (req, res) => {
+  const files = req.files;
+  let total_cost = 0;
+  let total_treatments = 0;
+  let treatments = req.body.treatments;
+  if (treatments) {
+    console.log(treatments);
+    // const treatments = req.body.treatments;
+    treatments.forEach(function (obj) {
+      // const issue = obj.issu;
+      let charges = obj.charges;
+      total_cost = total_cost + charges;
+      total_treatments = total_treatments + 1;
+    });
+  }
+  if (files) {
+    const patientdata = await Patient.findById(req.params.id);
+    const patientimages = patientdata.images;
+
+    let imagesPaths = patientimages;
+    const basePath = `${req.protocol}://${req.get("host")}/public/uploads/`;
+    files.map((file) => {
+      imagesPaths.push(`${basePath}${file.filename}`);
+    });
+    let params = {
       email: req.body.email,
-      name: req.body.first_name,
-      phone_number: req.body.name,
+      name: req.body.name,
+      phone_number: req.body.phone_number,
       age: req.body.age,
       gender: req.body.gender,
       address: req.body.address,
       payment_method: req.body.payment_method,
-      total_treatmnets: req.body.total_treatmnets,
-      total_cost: req.body.total_cost,
+      total_treatments: total_treatments,
+      total_cost: total_cost,
       next_appointmnet_date: req.body.next_appointmnet_date,
       treatments: req.body.treatments,
-    },
-    { new: true }
-  );
+      images: imagesPaths,
+    };
+    for (let prop in params) if (!params[prop]) delete params[prop];
 
-  if (!patient) return res.status(500).send("the patient cannot be updated!");
-  res.send(patient);
+    const patient = await Patient.findByIdAndUpdate(req.params.id, params, {
+      new: true,
+    });
+
+    if (!patient) return res.status(500).send("the patient cannot be updated!");
+    res.send(patient);
+  } else {
+    let params = {
+      email: req.body.email,
+      name: req.body.name,
+      phone_number: req.body.phone_number,
+      age: req.body.age,
+      gender: req.body.gender,
+      address: req.body.address,
+      payment_method: req.body.payment_method,
+      total_treatments: total_treatments,
+      total_cost: total_cost,
+      next_appointmnet_date: req.body.next_appointmnet_date,
+      treatments: req.body.treatments,
+    };
+    for (let prop in params) if (!params[prop]) delete params[prop];
+
+    const patient = await Patient.findByIdAndUpdate(req.params.id, params, {
+      new: true,
+    });
+
+    if (!patient) return res.status(500).send("the patient cannot be updated!");
+    res.send(patient);
+  }
 });
 
 router.delete("/:id", async (req, res) => {
@@ -83,55 +224,6 @@ router.get(`/:id`, async (req, res) => {
   if (!patient) {
     res.status(500).json({ success: false });
   }
-  res.send(patient);
-});
-
-function convert(str) {
-  var date = new Date(str),
-    mnth = ("0" + (date.getMonth() + 1)).slice(-2),
-    day = ("0" + date.getDate()).slice(-2);
-  return [date.getFullYear(), mnth, day].join("-");
-}
-router.post(`/`, async (req, res) => {
-  const doctor = await Doctor.findById(req.body.doctor);
-  if (!doctor) return res.status(400).send("Invalid doctor");
-  oldDate = new Date();
-  nextday = new Date(
-    oldDate.getFullYear(),
-    oldDate.getMonth(),
-    oldDate.getDate()
-  );
-  const date = convert(nextday);
-  const datei = new Date();
-  let patient = new Patient({
-    email: req.body.email,
-    name: req.body.name,
-
-    phone_number: req.body.phone_number,
-    age: req.body.age,
-    gender: req.body.gender,
-    address: req.body.address,
-    payment_method: req.body.payment_method,
-    total_treatmnets: req.body.total_treatmnets,
-    // total_cost: req.body.total_cost,
-    visit_date: date,
-    next_appointmnet_date: req.body.next_appointmnet_date,
-    doctor: req.body.doctor,
-    treatments: req.body.treatments,
-    date: datei,
-  });
-
-  // const treatments=req.body.treatments;
-  //   treatments.forEach(function (treatment) {
-  //  const issue=treatment.issue;
-  //  const price=treatment.price;
-
-  // });
-
-  patient = await patient.save();
-
-  if (!patient) return res.status(500).send("The patient cannot be created");
-
   res.send(patient);
 });
 
