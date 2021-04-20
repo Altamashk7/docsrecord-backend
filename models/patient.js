@@ -34,10 +34,10 @@ const patientSchema = mongoose.Schema({
     type: Number,
   },
   visit_date: {
-    type: String,
+    type: Date,
   },
   next_appointment_date: {
-    type: String,
+    type: Date,
   },
   doctor: {
     type: mongoose.Schema.Types.ObjectId,

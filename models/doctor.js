@@ -26,10 +26,10 @@ const doctorSchema = mongoose.Schema({
     type: String,
   },
   register_date: {
-    type: String,
+    type: Date,
   },
   payment_valid_till: {
-    type: String,
+    type: Date,
   },
   free_trial: {
     type: Boolean,

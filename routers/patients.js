@@ -50,12 +50,12 @@ router.get(`/`, async (req, res) => {
   res.send(patientList);
 });
 
-function convert(str) {
-  var date = new Date(str),
-    mnth = ("0" + (date.getMonth() + 1)).slice(-2),
-    day = ("0" + date.getDate()).slice(-2);
-  return [date.getFullYear(), mnth, day].join("-");
-}
+// function convert(str) {
+//   var date = new Date(str),
+//     mnth = ("0" + (date.getMonth() + 1)).slice(-2),
+//     day = ("0" + date.getDate()).slice(-2);
+//   return [date.getFullYear(), mnth, day].join("-");
+// }
 router.post(`/`, uploadOptions.array("images", 10), async (req, res) => {
   const files = req.files;
   let imagesPaths = [];
@@ -69,13 +69,7 @@ router.post(`/`, uploadOptions.array("images", 10), async (req, res) => {
   var doctorid = mongoose.Types.ObjectId(req.body.doctor);
   const doctor = await Doctor.findById(doctorid);
   if (!doctor) return res.status(400).send("Invalid doctor");
-  oldDate = new Date();
-  nextday = new Date(
-    oldDate.getFullYear(),
-    oldDate.getMonth(),
-    oldDate.getDate()
-  );
-  const date = convert(nextday);
+
   const datei = new Date();
   let total_cost = doctor.visit_charges;
   let total_treatments = 0;
@@ -97,7 +91,7 @@ router.post(`/`, uploadOptions.array("images", 10), async (req, res) => {
     address: req.body.address,
     total_treatments: total_treatments,
     total_cost: total_cost,
-    visit_date: date,
+    visit_date: datei,
     next_appointment_date: req.body.next_appointment_date,
     doctor: doctorid,
     treatments: req.body.treatments,
@@ -109,23 +103,23 @@ router.post(`/`, uploadOptions.array("images", 10), async (req, res) => {
 
   if (!patient) return res.status(500).send("The patient cannot be created");
 
-  const doc = await Doctor.findById(doctorid);
-  if (patient && doc) {
-    const msg = {
-      to: patient.email, // Change to your recipient
-      from: "aditya.malik.cs.2018@miet.ac.in", // Change to your verified sender
-      subject: "Thanks for visiting " + doc.clinic_name,
-      html: `<div>Hello ${patient.name}, <br /> Thanks for visiting <strong> ${doc.clinic_name} </strong> We are happy to help you in your problems. <br />We hope to see you soon. Regards. </div>`,
-    };
-    sgMail
-      .send(msg)
-      .then(() => {
-        console.log("Email sent");
-      })
-      .catch((error) => {
-        console.error(error);
-      });
-  }
+  // const doc = await Doctor.findById(doctorid);
+  // if (patient && doc) {
+  //   const msg = {
+  //     to: patient.email, // Change to your recipient
+  //     from: "aditya.malik.cs.2018@miet.ac.in", // Change to your verified sender
+  //     subject: "Thanks for visiting " + doc.clinic_name,
+  //     html: `<div>Hello ${patient.name}, <br /> Thanks for visiting <strong> ${doc.clinic_name} </strong> We are happy to help you in your problems. <br />We hope to see you soon. Regards. </div>`,
+  //   };
+  //   sgMail
+  //     .send(msg)
+  //     .then(() => {
+  //       console.log("Email sent");
+  //     })
+  //     .catch((error) => {
+  //       console.error(error);
+  //     });
+  // }
 
   res.send(patient);
 });
@@ -137,9 +131,8 @@ router.put("/:id", uploadOptions.array("images", 10), async (req, res) => {
   let treatments = req.body.treatments;
   if (treatments) {
     console.log(treatments);
-    // const treatments = req.body.treatments;
+
     treatments.forEach(function (obj) {
-      // const issue = obj.issu;
       let charges = parseInt(obj.charges, 10);
       total_cost = total_cost + charges;
       total_treatments = total_treatments + 1;
