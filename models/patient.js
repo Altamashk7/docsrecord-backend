@@ -44,12 +44,10 @@ const patientSchema = mongoose.Schema({
     ref: "Doctor",
     required: true,
   },
-  treatments: [
-    {
-      treatment: String,
-      charges: Number, //charges
-    },
-  ],
+  treatments: {
+    type: Object,
+    required: true,
+  },
   date: {
     type: Date,
   },

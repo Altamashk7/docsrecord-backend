@@ -3,9 +3,12 @@ const express = require("express");
 const { Doctor } = require("../models/doctor");
 const router = express.Router();
 const mongoose = require("mongoose");
-const { compareSync } = require("bcryptjs");
 const multer = require("multer");
 const _ = require("lodash");
+const sgMail = require("@sendgrid/mail");
+
+sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+
 const FILE_TYPE_MAP = {
   "image/png": "png",
   "image/jpeg": "jpeg",
@@ -95,12 +98,11 @@ router.post(`/`, uploadOptions.array("images", 10), async (req, res) => {
     age: req.body.age,
     gender: req.body.gender,
     address: req.body.address,
-    payment_method: req.body.payment_method,
 
     total_treatments: total_treatments,
     total_cost: total_cost,
     visit_date: date,
-    next_appointmnet_date: req.body.next_appointmnet_date,
+    next_appointment_date: req.body.next_appointment_date,
     doctor: doctorid,
     treatments: req.body.treatments,
     date: datei,
@@ -110,6 +112,24 @@ router.post(`/`, uploadOptions.array("images", 10), async (req, res) => {
   patient = await patient.save();
 
   if (!patient) return res.status(500).send("The patient cannot be created");
+
+  const doc = await Doctor.findById(doctorid);
+  if (patient && doc) {
+    const msg = {
+      to: patient.email, // Change to your recipient
+      from: "aditya.malik.cs.2018@miet.ac.in", // Change to your verified sender
+      subject: "Thanks for visiting " + doc.clinic_name,
+      html: `<div>Hello ${patient.name}, <br /> Thanks for visiting <strong> ${doc.clinic_name} </strong> We are happy to help you in your problems. <br />We hope to see you soon. Regards. </div>`,
+    };
+    sgMail
+      .send(msg)
+      .then(() => {
+        console.log("Email sent");
+      })
+      .catch((error) => {
+        console.error(error);
+      });
+  }
 
   res.send(patient);
 });
@@ -145,10 +165,9 @@ router.put("/:id", uploadOptions.array("images", 10), async (req, res) => {
       age: req.body.age,
       gender: req.body.gender,
       address: req.body.address,
-      payment_method: req.body.payment_method,
       total_treatments: total_treatments,
       total_cost: total_cost,
-      next_appointmnet_date: req.body.next_appointmnet_date,
+      next_appointment_date: req.body.next_appointment_date,
       treatments: req.body.treatments,
       images: imagesPaths,
     };
@@ -168,10 +187,9 @@ router.put("/:id", uploadOptions.array("images", 10), async (req, res) => {
       age: req.body.age,
       gender: req.body.gender,
       address: req.body.address,
-      payment_method: req.body.payment_method,
       total_treatments: total_treatments,
       total_cost: total_cost,
-      next_appointmnet_date: req.body.next_appointmnet_date,
+      next_appointment_date: req.body.next_appointment_date,
       treatments: req.body.treatments,
     };
     for (let prop in params) if (!params[prop]) delete params[prop];
@@ -181,6 +199,40 @@ router.put("/:id", uploadOptions.array("images", 10), async (req, res) => {
     });
 
     if (!patient) return res.status(500).send("the patient cannot be updated!");
+
+    const appointment = new Date(req.body.next_appointment_date);
+
+    const doc = await Doctor.findById(patient.doctor);
+
+    if (patient && doc && req.body.next_appointment_date) {
+      const msg = {
+        to: patient.email, // Change to your recipient
+        from: "aditya.malik.cs.2018@miet.ac.in", // Change to your verified sender
+        subject:
+          "Next Appointment at " +
+          doc.clinic_name +
+          " on " +
+          +appointment.getDate() +
+          "/" +
+          appointment.getMonth() +
+          "/" +
+          appointment.getFullYear(),
+        html: `<div>Hello ${
+          patient.name
+        }, <br /> Your Next appointment at <strong> ${
+          doc.clinic_name
+        } </strong> is scheduled on <strong> ${appointment.getDate()} / ${appointment.getMonth()} / ${appointment.getFullYear()}</strong>. <br />We hope to see you soon. Regards. </div>`,
+      };
+      sgMail
+        .send(msg)
+        .then(() => {
+          console.log("Email sent");
+        })
+        .catch((error) => {
+          console.error(error);
+        });
+    }
+
     res.send(patient);
   }
 });

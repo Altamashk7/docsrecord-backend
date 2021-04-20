@@ -175,7 +175,7 @@ router.post("/login", async (req, res) => {
   const doctor = await Doctor.findOne({ email: req.body.email });
   const secret = process.env.secret;
   if (!doctor) {
-    return res.status(400).send("The doctor not found");
+    return res.status(400).send("email incorrect");
   }
 
   if (doctor && bcrypt.compareSync(req.body.password, doctor.password)) {
@@ -189,7 +189,7 @@ router.post("/login", async (req, res) => {
 
     res.status(200).send({ doctor: doctor._id, token: token });
   } else {
-    res.status(400).send("password is wrong!");
+    res.status(400).send("password incorrect");
   }
 });
 

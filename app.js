@@ -9,7 +9,7 @@ app.use(cors());
 app.use(express.urlencoded({ extended: true }));
 const authJwt = require("./helpers/jwt");
 const errorHandler = require("./helpers/error-handler");
-const PORT = "3001" || process.env.PORT;
+const PORT = process.env.PORT || "3000";
 
 mongoose.connect(process.env.CONNECTION_STRING, {
   useNewUrlParser: true,
