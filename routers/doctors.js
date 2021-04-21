@@ -76,12 +76,14 @@ router.post("/", uploadOptions.single("image"), async (req, res) => {
       password: bcrypt.hashSync(req.body.password, 10),
       name: req.body.name,
       register_date: registerdate,
-      paymnet_valid_till: paymentdate,
+      payment_valid_till: paymentdate,
       clinic_name: req.body.clinic_name,
       clinic_address: req.body.clinic_address,
       image: `${basePath}${fileName}`,
       visit_charges: req.body.visit_charges,
       timings: req.body.timings,
+      qualifications: req.body.qualifications,
+      phone_number: req.body.phone_number,
     });
     doctor = await doctor.save();
 
@@ -240,6 +242,8 @@ router.post("/register", uploadOptions.single("image"), async (req, res) => {
       image: `${basePath}${fileName}`,
       visit_charges: req.body.visit_charges,
       timings: req.body.timings,
+      qualifications: req.body.qualifications,
+      phone_number: req.body.phone_number,
     });
     doctor = await doctor.save();
 
