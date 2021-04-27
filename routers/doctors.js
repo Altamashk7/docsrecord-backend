@@ -196,7 +196,11 @@ router.post("/register", uploadOptions.single("image"), async (req, res) => {
   const file = req.file;
 
   var day = new Date();
+  let offset = day.getTimezoneOffset();
+  day = new Date(day.getTime() - offset * 60000);
   var pay = new Date();
+
+  pay = new Date(pay.getTime() - offset * 60000);
   pay = pay.setDate(pay.getDate() + 7);
 
   if (file) {
