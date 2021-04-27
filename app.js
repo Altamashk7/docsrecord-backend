@@ -21,8 +21,8 @@ mongoose.connect(process.env.CONNECTION_STRING, {
 const doctorsRouter = require("./routers/doctors");
 const patientsRouter = require("./routers/patients");
 //routes
-// app.use(authJwt());
-// app.use(errorHandler);
+app.use(authJwt());
+app.use(errorHandler);
 app.use("/doctors", doctorsRouter);
 app.use("/patients", patientsRouter);
 
