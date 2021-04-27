@@ -510,8 +510,21 @@ async function monthstatsf(id) {
       },
     },
   ]);
+  var monthsarray = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
 
-  return monthsstats;
+  if (monthsstats[0]) {
+    var data = monthsstats[0].data;
+    console.log(data);
+    let i = 0;
+    for (let key in data) {
+      const k = data[key];
+      monthsarray[i] = k;
+      i = i + 1;
+      console.log(k);
+    }
+  }
+
+  return monthsarray;
 }
 
 async function weekstatsf(id) {
@@ -520,13 +533,19 @@ async function weekstatsf(id) {
   daytoday = daytoday.getDay();
   var x = 1;
   var y = 7;
-  x = x + daytoday - 2;
-  y = y - daytoday;
-  console.log(x);
-  var k = new Date(new Date().getTime() - x * 24 * 60 * 60 * 1000);
-  var h = new Date(new Date().getTime() + y * 24 * 60 * 60 * 1000);
-  console.log(k);
-  console.log(h);
+
+  if (daytoday == 0) {
+    x = 6;
+    y = 0;
+  } else {
+    x = x + daytoday - 2;
+    y = y - daytoday;
+  }
+  // console.log(x);
+  // var k = new Date(new Date().getTime() - x * 24 * 60 * 60 * 1000);
+  // var h = new Date(new Date().getTime() + y * 24 * 60 * 60 * 1000);
+  // console.log(k);
+  // console.log(h);
 
   const patientListweek = await Patient.find({
     date: {
@@ -553,14 +572,19 @@ async function bothweekstatsf(id) {
   daytoday = daytoday.getDay();
   var x = 1;
   var y = 7;
-  x = x + daytoday - 2;
-  y = y - daytoday;
+
+  if (daytoday == 0) {
+    x = 6;
+    y = 0;
+  } else {
+    x = x + daytoday - 2;
+    y = y - daytoday;
+  }
   console.log(x);
   var k = new Date(new Date().getTime() - x * 24 * 60 * 60 * 1000);
   var h = new Date(new Date().getTime() + y * 24 * 60 * 60 * 1000);
   console.log(k);
   console.log(h);
-
   const patientListweek = await Patient.find({
     date: {
       $gte: new Date(new Date().getTime() - x * 24 * 60 * 60 * 1000),
@@ -578,7 +602,12 @@ async function bothweekstatsf(id) {
   }
 
   x = x + 7;
-  y = y - 7 - 1;
+  y = y - 7;
+
+  k = new Date(new Date().getTime() - x * 24 * 60 * 60 * 1000);
+  h = new Date(new Date().getTime() + y * 24 * 60 * 60 * 1000);
+  console.log(k);
+  console.log(h);
   const patientListlastweek = await Patient.find({
     date: {
       $gte: new Date(new Date().getTime() - x * 24 * 60 * 60 * 1000),
@@ -599,16 +628,16 @@ async function bothweekstatsf(id) {
 
 router.get(`/stats/:id`, async (req, res) => {
   const monthstats = await monthstatsf(req.params.id);
-  if (!monthstats) return res.status(500).send("error at backend! monthstats");
+  // if (!monthstats) return res.status(500).send("error at backend! monthstats");
   const weekstats = await weekstatsf(req.params.id);
-  if (!weekstats) return res.status(500).send("error at backend! weekstats");
+  // if (!weekstats) return res.status(500).send("error at backend! weekstats");
   const currentmonth = await currentmonthf(req.params.id);
-  if (!currentmonth) return res.status(500).send("error at backend! currmonth");
+  // if (!currentmonth) return res.status(500).send("error at backend! currmonth");
   const previousmonth = await previousmonthf(req.params.id);
-  if (!previousmonth)
-    return res.status(500).send("error at backend! prev month");
+  // if (!previousmonth)
+  //   return res.status(500).send("error at backend! prev month");
   const bothweekstats = await bothweekstatsf(req.params.id);
-  if (!bothweekstats) return res.status(500).send("error at backend! bothweek");
+  // if (!bothweekstats) return res.status(500).send("error at backend! bothweek");
 
   const monthpercentage =
     ((currentmonth - previousmonth) / previousmonth) * 100;
@@ -624,5 +653,13 @@ router.get(`/stats/:id`, async (req, res) => {
     weekpercentage: weekpercentage,
   });
 });
+// router.get(`/mstats/:id`, async (req, res) => {
+//   const monthstats = await monthstatsf(req.params.id);
+//   if (!monthstats) return res.status(500).send("error at backend! monthstats");
 
+//   // res.json({
+//   //   monthstats: monthstats,
+//   // });
+//   res.send(monthstats);
+// });
 module.exports = router;
