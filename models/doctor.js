@@ -31,7 +31,8 @@ const doctorSchema = mongoose.Schema({
     required: true,
   },
   image: {
-    type: String,
+    data: Buffer,
+    contentType: String,
   },
   register_date: {
     type: String,

@@ -6,12 +6,10 @@ const patientSchema = mongoose.Schema({
   email: {
     type: String,
   },
-
   name: {
     type: String,
     required: true,
   },
-
   phone_number: {
     type: String,
   },

@@ -103,6 +103,7 @@ router.post(`/`, uploadOptions.array("images", 10), async (req, res) => {
     treatments: req.body.treatments,
     date: datei,
     images: imagesPaths,
+    payment_method: req.body.payment_method,
   });
 
   patient = await patient.save();
@@ -136,7 +137,6 @@ router.put("/:id", uploadOptions.array("images", 10), async (req, res) => {
   let total_treatments = 0;
   let treatments = req.body.treatments;
   if (treatments) {
-    console.log(treatments);
     // const treatments = req.body.treatments;
     treatments.forEach(function (obj) {
       // const issue = obj.issu;
@@ -166,6 +166,7 @@ router.put("/:id", uploadOptions.array("images", 10), async (req, res) => {
       next_appointment_date: req.body.next_appointment_date,
       treatments: req.body.treatments,
       images: imagesPaths,
+      payment_method: req.body.payment_method,
     };
     for (let prop in params) if (!params[prop]) delete params[prop];
 
@@ -197,6 +198,7 @@ router.put("/:id", uploadOptions.array("images", 10), async (req, res) => {
       total_cost: total_cost,
       next_appointment_date: req.body.next_appointment_date,
       treatments: req.body.treatments,
+      payment_method: req.body.payment_method,
     };
     for (let prop in params) if (!params[prop]) delete params[prop];
 
