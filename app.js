@@ -10,7 +10,7 @@ app.use(express.json());
 app.use(
   cors({
     credentials: true,
-    origin: "https://docsrecord-backend.herokuapp.com",
+    origin: "https://docsrecord.netlify.app",
   })
 );
 app.use(express.urlencoded({ extended: true }));
