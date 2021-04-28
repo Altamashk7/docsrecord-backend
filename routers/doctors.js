@@ -4,29 +4,16 @@ const router = express.Router();
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const multer = require("multer");
-
-// Requiring the lodash library
+const fs = require("fs");
+const path = require("path");
 const _ = require("lodash");
-const FILE_TYPE_MAP = {
-  "image/png": "png",
-  "image/jpeg": "jpeg",
-  "image/jpg": "jpg",
-};
 
 const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    const isValid = FILE_TYPE_MAP[file.mimetype];
-    let uploadError = new Error("invalid image type");
-
-    if (isValid) {
-      uploadError = null;
-    }
-    cb(uploadError, "public/uploads");
+  destination: (req, file, cb) => {
+    cb(null, "public/uploads");
   },
-  filename: function (req, file, cb) {
-    const fileName = file.originalname.split(" ").join("-");
-    const extension = FILE_TYPE_MAP[file.mimetype];
-    cb(null, `${fileName}-${Date.now()}.${extension}`);
+  filename: (req, file, cb) => {
+    cb(null, file.fieldname + "-" + Date.now());
   },
 });
 
@@ -41,6 +28,10 @@ router.get(`/`, async (req, res) => {
   res.status(200).send(doctorList);
 });
 
+router.get("/logout", (req, res) => {
+  res.status(200).clearCookie("token").send("Logged out");
+});
+
 router.get("/:id", async (req, res) => {
   const doctor = await Doctor.findById(req.params.id).select("-password");
 
@@ -52,74 +43,26 @@ router.get("/:id", async (req, res) => {
   res.status(200).send(doctor);
 });
 
-router.post("/", uploadOptions.single("image"), async (req, res) => {
-  const file = req.file;
-  var day = new Date();
-  var pay = new Date();
-  pay = pay.setDate(pay.getDate() + 7);
-
-  if (file) {
-    const fileName = file.filename;
-    const basePath = `${req.protocol}://${req.get("host")}/public/uploads/`;
-
-    let doctor = new Doctor({
-      email: req.body.email,
-      password: bcrypt.hashSync(req.body.password, 10),
-      name: req.body.name,
-      register_date: day,
-      paymnet_valid_till: pay,
-      clinic_name: req.body.clinic_name,
-      clinic_address: req.body.clinic_address,
-      image: `${basePath}${fileName}`,
-      visit_charges: req.body.visit_charges,
-      timings: req.body.timings,
-    });
-    doctor = await doctor.save();
-
-    if (!doctor) return res.status(400).send("the doctor cannot be created!");
-
-    var sanitizeddoctor = _.omit(doctor.toObject(), "password");
-
-    res.status(200).send({ doctor: sanitizeddoctor });
-  } else {
-    let doctor = new Doctor({
-      email: req.body.email,
-      password: bcrypt.hashSync(req.body.password, 10),
-      name: req.body.name,
-      register_date: day,
-      paymnet_valid_till: pay,
-      clinic_name: req.body.clinic_name,
-      clinic_address: req.body.clinic_address,
-      visit_charges: req.body.visit_charges,
-      timings: req.body.timings,
-    });
-    doctor = await doctor.save();
-
-    if (!doctor) return res.status(400).send("the doctor cannot be created!");
-
-    var sanitizeddoctor = _.omit(doctor.toObject(), "password");
-
-    res.status(200).send({ doctor: sanitizeddoctor });
-  }
-});
-
 router.put("/:id", uploadOptions.single("image"), async (req, res) => {
   const file = req.file;
   if (file) {
-    const fileName = file.filename;
-    const basePath = `${req.protocol}://${req.get("host")}/public/uploads/`;
-
     let params = {
       email: req.body.email,
-      passwordHash: bcrypt.hashSync(req.body.password, 10),
       name: req.body.name,
-      paymnet_valid_till: req.body.paymnet_valid_till,
+      payment_valid_till: req.body.payment_valid_till,
       clinic_name: req.body.clinic_name,
       clinic_address: req.body.clinic_address,
-      image: `${basePath}${fileName}`,
+      image: {
+        data: fs.readFileSync(
+          path.join(__dirname + "//../public/uploads/" + req.file.filename)
+        ),
+        contentType: "image/png",
+      },
       free_trial: req.body.free_trial,
       visit_charges: req.body.visit_charges,
       timings: req.body.timings,
+      qualifications: req.body.qualifications,
+      phone_number: req.body.phone_number,
     };
     for (let prop in params) if (!params[prop]) delete params[prop];
 
@@ -127,22 +70,38 @@ router.put("/:id", uploadOptions.single("image"), async (req, res) => {
       new: true,
     });
 
-    if (!doctor) return res.status(400).send("the doctor cannot be created!");
-
     var sanitizeddoctor = _.omit(doctor.toObject(), "password");
+
+    if (!doctor) return res.status(400).send("the doctor cannot be updated!");
+
+    if (doctor) {
+      const directory = path.join(__dirname + "//../public/uploads/");
+      fs.readdir(directory, (err, files) => {
+        if (err) throw err;
+
+        for (const file of files) {
+          if (file !== "demo.txt") {
+            fs.unlink(path.join(directory, file), (err) => {
+              if (err) throw err;
+            });
+          }
+        }
+      });
+    }
 
     res.status(200).send({ doctor: sanitizeddoctor });
   } else {
     let params = {
       email: req.body.email,
-      passwordHash: bcrypt.hashSync(req.body.password, 10),
       name: req.body.name,
-      paymnet_valid_till: req.body.paymnet_valid_till,
+      payment_valid_till: req.body.payment_valid_till,
       clinic_name: req.body.clinic_name,
       clinic_address: req.body.clinic_address,
       free_trial: req.body.free_trial,
       visit_charges: req.body.visit_charges,
       timings: req.body.timings,
+      qualifications: req.body.qualifications,
+      phone_number: req.body.phone_number,
     };
     for (let prop in params) if (!params[prop]) delete params[prop];
 
@@ -150,7 +109,7 @@ router.put("/:id", uploadOptions.single("image"), async (req, res) => {
       new: true,
     });
 
-    if (!doctor) return res.status(400).send("the doctor cannot be created!");
+    if (!doctor) return res.status(400).send("the doctor cannot be updated!");
 
     var sanitizeddoctor = _.omit(doctor.toObject(), "password");
 
@@ -186,6 +145,7 @@ router.post("/login", async (req, res) => {
       { expiresIn: "1d" }
     );
 
+    res.cookie("token", token, { httpOnly: true });
     res.status(200).send({ doctor: doctor._id, token: token });
   } else {
     res.status(400).send("password incorrect");
@@ -204,20 +164,25 @@ router.post("/register", uploadOptions.single("image"), async (req, res) => {
   pay = pay.setDate(pay.getDate() + 7);
 
   if (file) {
-    const fileName = file.filename;
-    const basePath = `${req.protocol}://${req.get("host")}/public/uploads/`;
     const secret = process.env.secret;
     let doctor = new Doctor({
       email: req.body.email,
       password: bcrypt.hashSync(req.body.password, 10),
       name: req.body.name,
       register_date: day,
-      paymnet_valid_till: pay,
+      payment_valid_till: pay,
       clinic_name: req.body.clinic_name,
       clinic_address: req.body.clinic_address,
-      image: `${basePath}${fileName}`,
+      image: {
+        data: fs.readFileSync(
+          path.join(__dirname + "//../public/uploads/" + req.file.filename)
+        ),
+        contentType: "image/png",
+      },
       visit_charges: req.body.visit_charges,
       timings: req.body.timings,
+      qualifications: req.body.qualifications,
+      phone_number: req.body.phone_number,
     });
     doctor = await doctor.save();
 
@@ -230,6 +195,7 @@ router.post("/register", uploadOptions.single("image"), async (req, res) => {
       { expiresIn: "1d" }
     );
     var sanitizeddoctor = _.omit(doctor.toObject(), "password");
+    res.cookie("token", token, { httpOnly: true });
     res.status(200).send({ doctor: sanitizeddoctor, token: token });
   } else {
     const secret = process.env.secret;
@@ -244,6 +210,8 @@ router.post("/register", uploadOptions.single("image"), async (req, res) => {
       clinic_address: req.body.clinic_address,
       visit_charges: req.body.visit_charges,
       timings: req.body.timings,
+      qualifications: req.body.qualifications,
+      phone_number: req.body.phone_number,
     });
     doctor = await doctor.save();
 
@@ -256,7 +224,7 @@ router.post("/register", uploadOptions.single("image"), async (req, res) => {
       { expiresIn: "1d" }
     );
     var sanitizeddoctor = _.omit(doctor.toObject(), "password");
-
+    res.cookie("token", token, { httpOnly: true });
     res.status(200).send({ doctor: sanitizeddoctor, token: token });
   }
 });

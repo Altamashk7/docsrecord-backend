@@ -14,6 +14,14 @@ const doctorSchema = mongoose.Schema({
     type: String,
     required: true,
   },
+  phone_number: {
+    type: Number,
+    required: true,
+  },
+  qualifications: {
+    type: String,
+    required: true,
+  },
   clinic_name: {
     type: String,
     required: true,
@@ -23,7 +31,8 @@ const doctorSchema = mongoose.Schema({
     required: true,
   },
   image: {
-    type: String,
+    data: Buffer,
+    contentType: String,
   },
   register_date: {
     type: Date,
