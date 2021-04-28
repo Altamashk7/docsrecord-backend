@@ -49,7 +49,7 @@ router.put("/:id", uploadOptions.single("image"), async (req, res) => {
     let params = {
       email: req.body.email,
       name: req.body.name,
-      paymnet_valid_till: req.body.paymnet_valid_till,
+      payment_valid_till: req.body.payment_valid_till,
       clinic_name: req.body.clinic_name,
       clinic_address: req.body.clinic_address,
       image: {
@@ -152,29 +152,16 @@ router.post("/login", async (req, res) => {
   }
 });
 
-function convert(str) {
-  var date = new Date(str),
-    mnth = ("0" + (date.getMonth() + 1)).slice(-2),
-    day = ("0" + date.getDate()).slice(-2);
-  return [date.getFullYear(), mnth, day].join("-");
-}
-
 router.post("/register", uploadOptions.single("image"), async (req, res) => {
   const file = req.file;
 
-  const oldDate = new Date();
-  var day = new Date(
-    oldDate.getFullYear(),
-    oldDate.getMonth(),
-    oldDate.getDate()
-  );
-  var pay = new Date(
-    oldDate.getFullYear(),
-    oldDate.getMonth(),
-    oldDate.getDate() + 7
-  );
-  const registerdate = convert(day);
-  const paymentdate = convert(pay);
+  var day = new Date();
+  let offset = day.getTimezoneOffset();
+  day = new Date(day.getTime() - offset * 60000);
+  var pay = new Date();
+
+  pay = new Date(pay.getTime() - offset * 60000);
+  pay = pay.setDate(pay.getDate() + 7);
 
   if (file) {
     const secret = process.env.secret;
@@ -182,8 +169,8 @@ router.post("/register", uploadOptions.single("image"), async (req, res) => {
       email: req.body.email,
       password: bcrypt.hashSync(req.body.password, 10),
       name: req.body.name,
-      register_date: registerdate,
-      paymnet_valid_till: paymentdate,
+      register_date: day,
+      payment_valid_till: pay,
       clinic_name: req.body.clinic_name,
       clinic_address: req.body.clinic_address,
       image: {
@@ -217,8 +204,8 @@ router.post("/register", uploadOptions.single("image"), async (req, res) => {
       email: req.body.email,
       password: bcrypt.hashSync(req.body.password, 10),
       name: req.body.name,
-      register_date: registerdate,
-      payment_valid_till: paymentdate,
+      register_date: day,
+      payment_valid_till: pay,
       clinic_name: req.body.clinic_name,
       clinic_address: req.body.clinic_address,
       visit_charges: req.body.visit_charges,
