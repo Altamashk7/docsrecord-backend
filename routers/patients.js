@@ -5,30 +5,17 @@ const router = express.Router();
 const mongoose = require("mongoose");
 const multer = require("multer");
 const sgMail = require("@sendgrid/mail");
-const { compact } = require("lodash");
+const fs = require("fs");
+const path = require("path");
 
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
-const FILE_TYPE_MAP = {
-  "image/png": "png",
-  "image/jpeg": "jpeg",
-  "image/jpg": "jpg",
-};
-
 const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    const isValid = FILE_TYPE_MAP[file.mimetype];
-    let uploadError = new Error("invalid image type");
-
-    if (isValid) {
-      uploadError = null;
-    }
-    cb(uploadError, "public/uploads");
+  destination: (req, file, cb) => {
+    cb(null, "public/uploads");
   },
-  filename: function (req, file, cb) {
-    const fileName = file.originalname.split(" ").join("-");
-    const extension = FILE_TYPE_MAP[file.mimetype];
-    cb(null, `${fileName}-${Date.now()}.${extension}`);
+  filename: (req, file, cb) => {
+    cb(null, file.fieldname + "-" + Date.now());
   },
 });
 
@@ -52,12 +39,17 @@ router.get(`/`, async (req, res) => {
 
 router.post(`/`, uploadOptions.array("images", 10), async (req, res) => {
   const files = req.files;
-  let imagesPaths = [];
-  const basePath = `${req.protocol}://${req.get("host")}/public/uploads/`;
+  let imgs = [];
 
   if (files) {
     files.map((file) => {
-      imagesPaths.push(`${basePath}${file.filename}`);
+      imgs.push({
+        data: fs.readFileSync(
+          path.join(__dirname + "//../public/uploads/" + file.filename)
+        ),
+        contentType: "image/png",
+        customId: parseInt(Math.random() * 10000000),
+      });
     });
   }
   var doctorid = mongoose.Types.ObjectId(req.body.doctor);
@@ -92,13 +84,28 @@ router.post(`/`, uploadOptions.array("images", 10), async (req, res) => {
     doctor: doctorid,
     treatments: req.body.treatments,
     date: today,
-    images: imagesPaths,
+    images: imgs,
     payment_method: req.body.payment_method,
   });
 
   patient = await patient.save();
 
   if (!patient) return res.status(500).send("The patient cannot be created");
+
+  if (patient) {
+    const directory = path.join(__dirname + "//../public/uploads/");
+    fs.readdir(directory, (err, files) => {
+      if (err) throw err;
+
+      for (const file of files) {
+        if (file !== "demo.txt") {
+          fs.unlink(path.join(directory, file), (err) => {
+            if (err) throw err;
+          });
+        }
+      }
+    });
+  }
 
   const doc = await Doctor.findById(doctorid);
   if (patient && doc) {
@@ -134,14 +141,20 @@ router.put("/:id", uploadOptions.array("images", 10), async (req, res) => {
     });
   }
   if (files) {
-    const patientdata = await Patient.findById(req.params.id);
-    const patientimages = patientdata.images;
+    let imgs = [];
 
-    let imagesPaths = patientimages;
-    const basePath = `${req.protocol}://${req.get("host")}/public/uploads/`;
-    files.map((file) => {
-      imagesPaths.push(`${basePath}${file.filename}`);
-    });
+    if (files) {
+      files.map((file) => {
+        imgs.push({
+          data: fs.readFileSync(
+            path.join(__dirname + "//../public/uploads/" + file.filename)
+          ),
+          contentType: "image/png",
+          customId: parseInt(Math.random() * 10000000),
+        });
+      });
+    }
+
     let params = {
       email: req.body.email,
       name: req.body.name,
@@ -153,7 +166,7 @@ router.put("/:id", uploadOptions.array("images", 10), async (req, res) => {
       total_cost: total_cost,
       next_appointment_date: req.body.next_appointment_date,
       treatments: req.body.treatments,
-      images: imagesPaths,
+      images: imgs,
       payment_method: req.body.payment_method,
     };
     for (let prop in params) if (!params[prop]) delete params[prop];
@@ -173,6 +186,20 @@ router.put("/:id", uploadOptions.array("images", 10), async (req, res) => {
       }
     );
     if (!patient) return res.status(500).send("the patient cannot be updated!");
+    if (patient) {
+      const directory = path.join(__dirname + "//../public/uploads/");
+      fs.readdir(directory, (err, files) => {
+        if (err) throw err;
+
+        for (const file of files) {
+          if (file !== "demo.txt") {
+            fs.unlink(path.join(directory, file), (err) => {
+              if (err) throw err;
+            });
+          }
+        }
+      });
+    }
     res.send(patient);
   } else {
     let params = {
@@ -372,7 +399,7 @@ async function monthstatsf(id) {
   ];
 
   let TODAY = new Date("2021-12-31T23:59:59");
-  let YEAR_BEFORE = new Date("2021-01-01T00:00:00");
+  let YEAR_BEFORE = new Date("2021-01-01T05:31:00");
   var d = mongoose.Types.ObjectId(id);
 
   const monthsstats = await Patient.aggregate([
