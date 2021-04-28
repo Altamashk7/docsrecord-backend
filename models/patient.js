@@ -1,7 +1,5 @@
 const mongoose = require("mongoose");
 
-const Doctor = require("../models/doctor");
-
 const patientSchema = mongoose.Schema({
   email: {
     type: String,
@@ -32,10 +30,10 @@ const patientSchema = mongoose.Schema({
     type: Number,
   },
   visit_date: {
-    type: String,
+    type: Date,
   },
   next_appointment_date: {
-    type: String,
+    type: Date,
   },
   doctor: {
     type: mongoose.Schema.Types.ObjectId,
