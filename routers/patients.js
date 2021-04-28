@@ -372,7 +372,7 @@ async function monthstatsf(id) {
   ];
 
   let TODAY = new Date("2021-12-31T23:59:59");
-  let YEAR_BEFORE = new Date("2021-01-01T00:00:00");
+  let YEAR_BEFORE = new Date("2021-01-01T05:31:00");
   var d = mongoose.Types.ObjectId(id);
 
   const monthsstats = await Patient.aggregate([
