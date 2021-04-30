@@ -19,9 +19,7 @@ mongoose.connect(process.env.CONNECTION_STRING, {
 
 const doctorsRouter = require("./routers/doctors");
 const patientsRouter = require("./routers/patients");
-const cookieParser = require("cookie-parser");
 
-app.use(cookieParser());
 //routes
 app.use(authJwt());
 app.use(errorHandler);
