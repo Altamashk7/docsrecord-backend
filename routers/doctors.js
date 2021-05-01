@@ -28,10 +28,6 @@ router.get(`/`, async (req, res) => {
   res.status(200).send(doctorList);
 });
 
-router.get("/logout", (req, res) => {
-  res.status(200).clearCookie("token").send("Logged out");
-});
-
 router.get("/:id", async (req, res) => {
   const doctor = await Doctor.findById(req.params.id).select("-password");
 
@@ -145,7 +141,6 @@ router.post("/login", async (req, res) => {
       { expiresIn: "1d" }
     );
 
-    res.cookie("token", token, { httpOnly: true });
     res.status(200).send({ doctor: doctor._id, token: token });
   } else {
     res.status(400).send("password incorrect");
@@ -195,7 +190,6 @@ router.post("/register", uploadOptions.single("image"), async (req, res) => {
       { expiresIn: "1d" }
     );
     var sanitizeddoctor = _.omit(doctor.toObject(), "password");
-    res.cookie("token", token, { httpOnly: true });
     res.status(200).send({ doctor: sanitizeddoctor, token: token });
   } else {
     const secret = process.env.secret;
@@ -224,7 +218,6 @@ router.post("/register", uploadOptions.single("image"), async (req, res) => {
       { expiresIn: "1d" }
     );
     var sanitizeddoctor = _.omit(doctor.toObject(), "password");
-    res.cookie("token", token, { httpOnly: true });
     res.status(200).send({ doctor: sanitizeddoctor, token: token });
   }
 });

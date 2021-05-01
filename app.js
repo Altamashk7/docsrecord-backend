@@ -8,6 +8,7 @@ const errorHandler = require("./helpers/error-handler");
 const app = express();
 app.use(express.json());
 app.use(cors());
+app.options("*", cors());
 app.use(express.urlencoded({ extended: true }));
 
 mongoose.connect(process.env.CONNECTION_STRING, {
@@ -19,9 +20,7 @@ mongoose.connect(process.env.CONNECTION_STRING, {
 
 const doctorsRouter = require("./routers/doctors");
 const patientsRouter = require("./routers/patients");
-const cookieParser = require("cookie-parser");
 
-app.use(cookieParser());
 //routes
 app.use(authJwt());
 app.use(errorHandler);
