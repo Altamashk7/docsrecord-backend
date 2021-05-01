@@ -8,6 +8,7 @@ const errorHandler = require("./helpers/error-handler");
 const app = express();
 app.use(express.json());
 app.use(cors());
+app.options("*", cors());
 app.use(express.urlencoded({ extended: true }));
 
 mongoose.connect(process.env.CONNECTION_STRING, {
