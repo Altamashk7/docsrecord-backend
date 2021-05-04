@@ -20,12 +20,14 @@ mongoose.connect(process.env.CONNECTION_STRING, {
 
 const doctorsRouter = require("./routers/doctors");
 const patientsRouter = require("./routers/patients");
+const paymentsRouter = require("./routers/payments");
 
 //routes
 app.use(authJwt());
 app.use(errorHandler);
 app.use("/doctors", doctorsRouter);
 app.use("/patients", patientsRouter);
+app.use("/payments", paymentsRouter);
 
 app.get("/", (req, res) => {
   res.send("API is working fine !");

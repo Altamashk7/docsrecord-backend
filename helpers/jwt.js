@@ -8,7 +8,13 @@ function authJwt() {
     algorithms: ["HS256"],
     // isRevoked: isRevoked
   }).unless({
-    path: [`/doctors/login`, `/doctors/register`, `/`],
+    path: [
+      `/doctors/login`,
+      `/doctors/register`,
+      `/`,
+      `/payments/orders`,
+      `/payments/success`,
+    ],
   });
 }
 
