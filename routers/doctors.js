@@ -131,8 +131,14 @@ router.post("/login", async (req, res) => {
   if (!doctor) {
     return res.status(400).send("email incorrect");
   }
-
-  if (doctor && bcrypt.compareSync(req.body.password, doctor.password)) {
+  // var today = new Date();
+  // var payment = new Date(doctor.payment_valid_till);
+  // console.log(today);
+  // console.log(payment);
+  // if (today.getTime() > payment.getTime()) {
+  //   res.status(200).send("payment due");
+  // }
+  else if (doctor && bcrypt.compareSync(req.body.password, doctor.password)) {
     const token = jwt.sign(
       {
         doctorId: doctor._id,
@@ -141,7 +147,7 @@ router.post("/login", async (req, res) => {
       { expiresIn: "1d" }
     );
 
-    res.status(200).send({ doctor: doctor._id, token: token });
+    res.status(200).send({ doctor: doctor, token: token });
   } else {
     res.status(400).send("password incorrect");
   }
