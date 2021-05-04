@@ -42,7 +42,6 @@ const patientSchema = mongoose.Schema({
   },
   treatments: {
     type: Object,
-    required: true,
   },
   date: {
     type: Date,
