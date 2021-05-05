@@ -7,7 +7,10 @@ const multer = require("multer");
 const sgMail = require("@sendgrid/mail");
 const fs = require("fs");
 const path = require("path");
-const client = require("twilio")();
+
+const accountSid = process.env.TWILIO_ACCOUNT_SID;
+const authToken = process.env.TWILIO_AUTH_TOKEN;
+const client = require("twilio")(accountSid, authToken);
 
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
@@ -299,7 +302,9 @@ router.put("/:id", uploadOptions.array("images", 10), async (req, res) => {
           } is scheduled on ${appointment.getDate()} / ${appointment.getMonth()} / ${appointment.getFullYear()}. Hope to see you soon !`,
           to: `whatsapp:+91-${patient.phone_number}`,
         })
-        .then((message) => console.log(message.sid));
+        .then((message) =>
+          console.log("Message sent to : " + patient.phone_number)
+        );
     }
 
     res.send(patient);
