@@ -7,6 +7,7 @@ const multer = require("multer");
 const sgMail = require("@sendgrid/mail");
 const fs = require("fs");
 const path = require("path");
+const client = require("twilio")();
 
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
@@ -123,6 +124,14 @@ router.post(`/`, uploadOptions.array("images", 10), async (req, res) => {
       .catch((error) => {
         console.error(error);
       });
+
+    client.messages
+      .create({
+        from: "whatsapp:+14155238886",
+        body: `<div>Hello ${patient.name}, <br /> Thanks for visiting <strong> ${doc.clinic_name} </strong> We are happy to help you in your problems. <br />We hope to see you soon. Regards. </div>`,
+        to: `whatsapp:+91-${patient.phone_number}`,
+      })
+      .then((message) => console.log(message.sid));
   }
 
   res.send(patient);
@@ -281,6 +290,16 @@ router.put("/:id", uploadOptions.array("images", 10), async (req, res) => {
         .catch((error) => {
           console.error(error);
         });
+
+      client.messages
+        .create({
+          from: "whatsapp:+14155238886",
+          body: `Hi ${patient.name}, Your next appointment with ${
+            doc.clinic_name
+          } is scheduled on ${appointment.getDate()} / ${appointment.getMonth()} / ${appointment.getFullYear()}. Hope to see you soon !`,
+          to: `whatsapp:+91-${patient.phone_number}`,
+        })
+        .then((message) => console.log(message.sid));
     }
 
     res.send(patient);
