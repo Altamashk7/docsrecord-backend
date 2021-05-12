@@ -33,6 +33,10 @@ app.get("/", (req, res) => {
   res.send("API is working fine !");
 });
 
+app.get("/test", (req, res) => {
+  res.send("API is working fine with valid credentials !");
+});
+
 app.listen(process.env.PORT, () =>
   console.log("Server is running on port : " + process.env.PORT)
 );
