@@ -42,6 +42,7 @@ router.get("/:id", async (req, res) => {
 router.put("/:id", uploadOptions.single("image"), async (req, res) => {
   const file = req.file;
   if (file) {
+    var obj = JSON.parse(req.body.timings);
     let params = {
       email: req.body.email,
       name: req.body.name,
@@ -56,7 +57,7 @@ router.put("/:id", uploadOptions.single("image"), async (req, res) => {
       },
       free_trial: req.body.free_trial,
       visit_charges: req.body.visit_charges,
-      timings: req.body.timings,
+      timings: obj,
       qualifications: req.body.qualifications,
       phone_number: req.body.phone_number,
     };
@@ -87,6 +88,7 @@ router.put("/:id", uploadOptions.single("image"), async (req, res) => {
 
     res.status(200).send({ doctor: sanitizeddoctor });
   } else {
+    var obj = JSON.parse(req.body.timings);
     let params = {
       email: req.body.email,
       name: req.body.name,
@@ -95,7 +97,7 @@ router.put("/:id", uploadOptions.single("image"), async (req, res) => {
       clinic_address: req.body.clinic_address,
       free_trial: req.body.free_trial,
       visit_charges: req.body.visit_charges,
-      timings: req.body.timings,
+      timings: obj,
       qualifications: req.body.qualifications,
       phone_number: req.body.phone_number,
     };
@@ -146,77 +148,82 @@ router.post("/login", async (req, res) => {
 });
 
 router.post("/register", uploadOptions.single("image"), async (req, res) => {
-  const file = req.file;
-
-  var day = new Date();
-  let offset = day.getTimezoneOffset();
-  day = new Date(day.getTime() - offset * 60000);
-  var pay = new Date();
-
-  pay = new Date(pay.getTime() - offset * 60000);
-  pay = pay.setDate(pay.getDate() + 7);
-
-  if (file) {
-    const secret = process.env.secret;
-    let doctor = new Doctor({
-      email: req.body.email,
-      password: bcrypt.hashSync(req.body.password, 10),
-      name: req.body.name,
-      register_date: day,
-      payment_valid_till: pay,
-      clinic_name: req.body.clinic_name,
-      clinic_address: req.body.clinic_address,
-      image: {
-        data: fs.readFileSync(
-          path.join(__dirname + "//../public/uploads/" + req.file.filename)
-        ),
-        contentType: "image/png",
-      },
-      visit_charges: req.body.visit_charges,
-      timings: req.body.timings,
-      qualifications: req.body.qualifications,
-      phone_number: req.body.phone_number,
-    });
-    doctor = await doctor.save();
-
-    if (!doctor) return res.status(400).send("the doctor cannot be created!");
-    const token = jwt.sign(
-      {
-        doctoremail: req.body.email,
-      },
-      secret,
-      { expiresIn: "1d" }
-    );
-    var sanitizeddoctor = _.omit(doctor.toObject(), "password");
-    res.status(200).send({ doctor: sanitizeddoctor, token: token });
+  const doctorcheck = await Doctor.findOne({ email: req.body.email });
+  if (doctorcheck) {
+    res.status(400).send("Email Already registered");
   } else {
-    const secret = process.env.secret;
+    const file = req.file;
 
-    let doctor = new Doctor({
-      email: req.body.email,
-      password: bcrypt.hashSync(req.body.password, 10),
-      name: req.body.name,
-      register_date: day,
-      payment_valid_till: pay,
-      clinic_name: req.body.clinic_name,
-      clinic_address: req.body.clinic_address,
-      visit_charges: req.body.visit_charges,
-      timings: req.body.timings,
-      qualifications: req.body.qualifications,
-      phone_number: req.body.phone_number,
-    });
-    doctor = await doctor.save();
+    var day = new Date();
+    let offset = day.getTimezoneOffset();
+    day = new Date(day.getTime() - offset * 60000);
+    var pay = new Date();
 
-    if (!doctor) return res.status(400).send("the doctor cannot be created!");
-    const token = jwt.sign(
-      {
-        doctoremail: req.body.email,
-      },
-      secret,
-      { expiresIn: "1d" }
-    );
-    var sanitizeddoctor = _.omit(doctor.toObject(), "password");
-    res.status(200).send({ doctor: sanitizeddoctor, token: token });
+    pay = new Date(pay.getTime() - offset * 60000);
+    pay = pay.setDate(pay.getDate() + 7);
+
+    if (file) {
+      const secret = process.env.secret;
+      let doctor = new Doctor({
+        email: req.body.email,
+        password: bcrypt.hashSync(req.body.password, 10),
+        name: req.body.name,
+        register_date: day,
+        payment_valid_till: pay,
+        clinic_name: req.body.clinic_name,
+        clinic_address: req.body.clinic_address,
+        image: {
+          data: fs.readFileSync(
+            path.join(__dirname + "//../public/uploads/" + req.file.filename)
+          ),
+          contentType: "image/png",
+        },
+        visit_charges: req.body.visit_charges,
+        timings: req.body.timings,
+        // qualifications: req.body.qualifications,
+        phone_number: req.body.phone_number,
+      });
+      doctor = await doctor.save();
+
+      if (!doctor) return res.status(400).send("the doctor cannot be created!");
+      const token = jwt.sign(
+        {
+          doctoremail: req.body.email,
+        },
+        secret,
+        { expiresIn: "1d" }
+      );
+      var sanitizeddoctor = _.omit(doctor.toObject(), "password");
+      res.status(200).send({ doctor: sanitizeddoctor, token: token });
+    } else {
+      const secret = process.env.secret;
+
+      let doctor = new Doctor({
+        email: req.body.email,
+        password: bcrypt.hashSync(req.body.password, 10),
+        name: req.body.name,
+        register_date: day,
+        payment_valid_till: pay,
+        // clinic_name: req.body.clinic_name,
+        // clinic_address: req.body.clinic_address,
+        // visit_charges: req.body.visit_charges,
+        // timings: req.body.timings,
+        // qualifications: req.body.qualifications,
+        phone_number: req.body.phone_number,
+      });
+      doctor = await doctor.save();
+
+      if (!doctor) return res.status(400).send("the doctor cannot be created!");
+      const token = jwt.sign(
+        {
+          doctoremail: req.body.email,
+        },
+        secret,
+        { expiresIn: "1d" }
+      );
+      var sanitizeddoctor = _.omit(doctor.toObject(), "password");
+      res.status(200).send({ doctor: sanitizeddoctor, token: token });
+    }
   }
 });
 

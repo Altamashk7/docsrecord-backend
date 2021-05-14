@@ -20,15 +20,16 @@ const doctorSchema = mongoose.Schema({
   },
   qualifications: {
     type: String,
-    required: true,
+    default: "",
   },
   clinic_name: {
     type: String,
-    required: true,
+
+    default: "",
   },
   clinic_address: {
     type: String,
-    required: true,
+    default: "",
   },
   image: {
     data: Buffer,
@@ -40,16 +41,13 @@ const doctorSchema = mongoose.Schema({
   payment_valid_till: {
     type: Date,
   },
-  free_trial: {
-    type: Boolean,
-    default: true,
-  },
+
   visit_charges: {
     type: Number,
     default: 0,
   },
   timings: {
-    type: String,
+    type: Object,
   },
 });
 
