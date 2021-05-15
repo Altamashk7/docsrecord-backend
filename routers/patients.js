@@ -81,6 +81,7 @@ router.post(`/`, uploadOptions.array("images", 10), async (req, res) => {
     total_cost: total_cost,
     visit_date: today,
     next_appointment_date: req.body.next_appointment_date,
+    next_appointment_time: req.body.next_appointment_time,
     doctor: doctorid,
     treatments: req.body.treatments,
     date: today,
@@ -166,6 +167,7 @@ router.put("/:id", uploadOptions.array("images", 10), async (req, res) => {
       total_treatments: total_treatments,
       total_cost: total_cost,
       next_appointment_date: req.body.next_appointment_date,
+      next_appointment_time: req.body.next_appointment_time,
       treatments: req.body.treatments,
       images: imgs,
       payment_method: req.body.payment_method,
@@ -221,6 +223,7 @@ router.put("/:id", uploadOptions.array("images", 10), async (req, res) => {
       total_treatments: total_treatments,
       total_cost: total_cost,
       next_appointment_date: req.body.next_appointment_date,
+      next_appointment_time: req.body.next_appointment_time,
       treatments: req.body.treatments,
       payment_method: req.body.payment_method,
     };
@@ -271,7 +274,9 @@ router.put("/:id", uploadOptions.array("images", 10), async (req, res) => {
           patient.name
         }, <br /> Your Next appointment at <strong> ${
           doc.clinic_name
-        } </strong> is scheduled on <strong> ${appointment.getDate()} / ${appointment.getMonth()} / ${appointment.getFullYear()}</strong>. <br />We hope to see you soon. Regards. </div>`,
+        } </strong> is scheduled on <strong> ${appointment.getDate()} / ${appointment.getMonth()} / ${appointment.getFullYear()}</strong> at ${
+          req.body.next_appointment_time
+        }. <br />We hope to see you soon. Regards. </div>`,
       };
       sgMail
         .send(msg)

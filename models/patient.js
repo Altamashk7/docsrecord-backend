@@ -35,6 +35,9 @@ const patientSchema = mongoose.Schema({
   next_appointment_date: {
     type: Date,
   },
+  next_appointment_time: {
+    type: String,
+  },
   doctor: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Doctor",
