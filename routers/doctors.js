@@ -160,7 +160,7 @@ router.post("/register", uploadOptions.single("image"), async (req, res) => {
     var pay = new Date();
 
     pay = new Date(pay.getTime() - offset * 60000);
-    pay = pay.setDate(pay.getDate() + 7);
+    pay = pay.setDate(pay.getDate() + 30);
 
     if (file) {
       const secret = process.env.secret;
