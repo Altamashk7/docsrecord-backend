@@ -29,7 +29,7 @@ router.get(`/`, async (req, res) => {
     filter = { doctor: req.query.doctor };
   }
 
-  const patientList = await Patient.find(filter);
+  const patientList = await Patient.find(filter).sort({ date: -1 });
 
   if (!patientList) {
     res.status(500).json({ success: false });
