@@ -42,7 +42,7 @@ router.get("/:id", async (req, res) => {
 router.put("/:id", uploadOptions.single("image"), async (req, res) => {
   const file = req.file;
   if (file) {
-    var obj = JSON.parse(req.body.timings);
+    // var obj = JSON.parse(req.body.timings);
     let params = {
       email: req.body.email,
       name: req.body.name,
@@ -57,7 +57,7 @@ router.put("/:id", uploadOptions.single("image"), async (req, res) => {
       },
       free_trial: req.body.free_trial,
       visit_charges: req.body.visit_charges,
-      timings: obj,
+      // timings: obj,
       qualifications: req.body.qualifications,
       phone_number: req.body.phone_number,
     };
@@ -88,7 +88,7 @@ router.put("/:id", uploadOptions.single("image"), async (req, res) => {
 
     res.status(200).send({ doctor: sanitizeddoctor });
   } else {
-    var obj = JSON.parse(req.body.timings);
+    // var obj = JSON.parse(req.body.timings);
     let params = {
       email: req.body.email,
       name: req.body.name,
@@ -97,7 +97,7 @@ router.put("/:id", uploadOptions.single("image"), async (req, res) => {
       clinic_address: req.body.clinic_address,
       free_trial: req.body.free_trial,
       visit_charges: req.body.visit_charges,
-      timings: obj,
+      // timings: obj,
       qualifications: req.body.qualifications,
       phone_number: req.body.phone_number,
     };
