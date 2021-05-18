@@ -112,7 +112,7 @@ router.post(`/`, uploadOptions.array("images", 10), async (req, res) => {
   if (patient && doc) {
     const msg = {
       to: patient.email, // Change to your recipient
-      from: "aditya.malik.cs.2018@miet.ac.in", // Change to your verified sender
+      from: "docsrecordmail@gmail.com", // Change to your verified sender
       subject: "Thanks for visiting " + doc.clinic_name,
       html: `<div>Hello ${patient.name}, <br /> Thanks for visiting <strong> ${doc.clinic_name} </strong> We are happy to help you in your problems. <br />We hope to see you soon. Regards. </div>`,
     };
@@ -260,7 +260,7 @@ router.put("/:id", uploadOptions.array("images", 10), async (req, res) => {
     if (patient && doc && req.body.next_appointment_date) {
       const msg = {
         to: patient.email, // Change to your recipient
-        from: "aditya.malik.cs.2018@miet.ac.in", // Change to your verified sender
+        from: "docsrecordmail@gmail.com", // Change to your verified sender
         subject:
           "Next Appointment at " +
           doc.clinic_name +
