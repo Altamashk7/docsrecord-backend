@@ -35,7 +35,7 @@ mongoose.connect(process.env.CONNECTION_STRING, {
 //middleware
 
 app.use(express.json());
-app.use(cors({ origin: "https://www.docsrecord.com", credentials: true }));
+app.use(cors({ origin: "https://docsrecord.netlify.app", credentials: true }));
 app.use(express.urlencoded({ extended: true }));
 
 app.set("trust proxy", 1);
@@ -126,11 +126,11 @@ app.get(
 app.get(
   "/auth/google/callback",
   passport.authenticate("google", {
-    failureRedirect: "https://www.docsrecord.com",
+    failureRedirect: "https://docsrecord.netlify.app",
   }),
   function (req, res) {
     // Successful authentication, redirect home.
-    res.redirect("https://www.docsrecord.com/records");
+    res.redirect("https://docsrecord.netlify.app/records");
   }
 );
 
