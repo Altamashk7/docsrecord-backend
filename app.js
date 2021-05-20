@@ -40,8 +40,8 @@ app.use(express.urlencoded({ extended: true }));
 app.use(
   session({
     secret: process.env.secret,
-    resave: false,
-    saveUninitialized: false,
+    resave: true,
+    saveUninitialized: true,
     cookie: {
       sameSite: "none",
       httpOnly: true,
