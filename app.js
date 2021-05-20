@@ -34,8 +34,7 @@ mongoose.connect(process.env.CONNECTION_STRING, {
 //middleware
 
 app.use(express.json());
-app.use(cors());
-app.options("*", cors());
+app.use(cors({ origin: "https://docsrecord.com", credentials: true }));
 app.use(express.urlencoded({ extended: true }));
 
 app.use(
