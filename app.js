@@ -35,7 +35,7 @@ mongoose.connect(process.env.CONNECTION_STRING, {
 //middleware
 
 app.use(express.json());
-app.use(cors({ origin: "http://localhost:3001", credentials: true }));
+app.use(cors({ origin: "http://www.docsrecord.com", credentials: true }));
 app.use(express.urlencoded({ extended: true }));
 
 app.set("trust proxy", 1);
@@ -126,11 +126,11 @@ app.get(
 app.get(
   "/auth/google/callback",
   passport.authenticate("google", {
-    failureRedirect: "http://localhost:3001/",
+    failureRedirect: "http://www.docsrecord.com",
   }),
   function (req, res) {
     // Successful authentication, redirect home.
-    res.redirect("http://localhost:3001/records");
+    res.redirect("http://www.docsrecord.com/records");
   }
 );
 
