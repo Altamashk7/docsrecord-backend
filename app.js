@@ -6,9 +6,11 @@ const session = require("express-session");
 const passport = require("passport");
 const GoogleStrategy = require("passport-google-oauth20").Strategy;
 const { Doctor } = require("./models/doctor");
+const cookieParser = require("cookie-parser");
 
 const app = express();
 app.set("trust proxy", 1);
+app.use(cookieParser());
 
 //to generate random ids
 function makeid(length) {
