@@ -22,127 +22,23 @@ const storage = multer.diskStorage({
 const uploadOptions = multer({ storage: storage });
 
 router.get(`/`, async (req, res) => {
-  // localhost:3000/patients?doctor=2342342
+  if (req.user !== undefined) {
+    let filter = {};
+    filter = { doctor: req.user._id };
+    const patientList = await Patient.find(filter).sort({ date: -1 });
 
-  let filter = {};
-  if (req.query.doctor) {
-    filter = { doctor: req.query.doctor };
+    if (!patientList) {
+      res.status(500).json({ success: false });
+    }
+    res.send(patientList);
+  } else {
+    res.status(401).send("unauthorized user");
   }
-
-  const patientList = await Patient.find(filter).sort({ date: -1 });
-
-  if (!patientList) {
-    res.status(500).json({ success: false });
-  }
-  res.send(patientList);
 });
 
 router.post(`/`, uploadOptions.array("images", 10), async (req, res) => {
-  const files = req.files;
-  let imgs = [];
-
-  if (files) {
-    files.map((file) => {
-      imgs.push({
-        data: fs.readFileSync(
-          path.join(__dirname + "//../public/uploads/" + file.filename)
-        ),
-        contentType: "image/png",
-        customId: parseInt(Math.random() * 10000000),
-      });
-    });
-  }
-  var doctorid = mongoose.Types.ObjectId(req.body.doctor);
-  const doctor = await Doctor.findById(doctorid);
-  if (!doctor) return res.status(400).send("Invalid doctor");
-
-  let today = new Date();
-  let offset = today.getTimezoneOffset();
-  today = new Date(today.getTime() - offset * 60000);
-  let total_cost = doctor.visit_charges;
-  let total_treatments = 0;
-  let treatments = req.body.treatments;
-  if (treatments) {
-    treatments.forEach(function (obj) {
-      let charges = parseInt(obj.charges, 10);
-      total_cost = total_cost + charges;
-      total_treatments = total_treatments + 1;
-    });
-  }
-
-  let patient = new Patient({
-    email: req.body.email,
-    name: req.body.name,
-    phone_number: req.body.phone_number,
-    age: req.body.age,
-    gender: req.body.gender,
-    address: req.body.address,
-    total_treatments: total_treatments,
-    total_cost: total_cost,
-    visit_date: today,
-    next_appointment_date: req.body.next_appointment_date,
-    next_appointment_time: req.body.next_appointment_time,
-    doctor: doctorid,
-    treatments: req.body.treatments,
-    date: today,
-    images: imgs,
-    payment_method: req.body.payment_method,
-  });
-
-  patient = await patient.save();
-
-  if (!patient) return res.status(500).send("The patient cannot be created");
-
-  if (patient) {
-    const directory = path.join(__dirname + "//../public/uploads/");
-    fs.readdir(directory, (err, files) => {
-      if (err) throw err;
-
-      for (const file of files) {
-        if (file !== "demo.txt") {
-          fs.unlink(path.join(directory, file), (err) => {
-            if (err) throw err;
-          });
-        }
-      }
-    });
-  }
-
-  const doc = await Doctor.findById(doctorid);
-  if (patient && doc) {
-    const msg = {
-      to: patient.email, // Change to your recipient
-      from: "docsrecordmail@gmail.com", // Change to your verified sender
-      subject: "Thanks for visiting " + doc.clinic_name,
-      html: `<div>Hello ${patient.name}, <br /> Thanks for visiting <strong> ${doc.clinic_name} </strong> We are happy to help you in your problems. <br />We hope to see you soon. Regards. </div>`,
-    };
-    sgMail
-      .send(msg)
-      .then(() => {
-        console.log("Email sent");
-      })
-      .catch((error) => {
-        console.error(error);
-      });
-  }
-
-  res.send(patient);
-});
-
-router.put("/:id", uploadOptions.array("images", 10), async (req, res) => {
-  const files = req.files;
-  let total_cost = 0;
-  let total_treatments = 0;
-
-  let treatments = req.body.treatments;
-  if (treatments) {
-    treatments.forEach(function (obj) {
-      let charges = parseInt(obj.charges, 10);
-      total_cost = total_cost + charges;
-      total_treatments = total_treatments + 1;
-    });
-  }
-  if (files) {
+  if (req.user) {
+    const files = req.files;
     let imgs = [];
 
     if (files) {
@@ -156,28 +52,16 @@ router.put("/:id", uploadOptions.array("images", 10), async (req, res) => {
         });
       });
     }
+    var doctorid = mongoose.Types.ObjectId(req.user._id);
+    const doctor = req.user;
+    if (!doctor) return res.status(400).send("Invalid doctor");
 
-    let params = {
-      email: req.body.email,
-      name: req.body.name,
-      phone_number: req.body.phone_number,
-      age: req.body.age,
-      gender: req.body.gender,
-      address: req.body.address,
-      total_treatments: total_treatments,
-      total_cost: total_cost,
-      next_appointment_date: req.body.next_appointment_date,
-      next_appointment_time: req.body.next_appointment_time,
-      treatments: req.body.treatments,
-      images: imgs,
-      payment_method: req.body.payment_method,
-    };
-    for (let prop in params) if (!params[prop]) delete params[prop];
-
-    let patient = await Patient.findByIdAndUpdate(req.params.id, params, {
-      new: true,
-    });
-    let treatments = patient.treatments;
+    let today = new Date();
+    let offset = today.getTimezoneOffset();
+    today = new Date(today.getTime() - offset * 60000);
+    let total_cost = doctor.visit_charges;
+    let total_treatments = 0;
+    let treatments = req.body.treatments;
     if (treatments) {
       treatments.forEach(function (obj) {
         let charges = parseInt(obj.charges, 10);
@@ -186,17 +70,29 @@ router.put("/:id", uploadOptions.array("images", 10), async (req, res) => {
       });
     }
 
-    const doctor = await Doctor.findById(patient.doctor);
-    total_cost = total_cost + doctor.visit_charges;
+    let patient = new Patient({
+      email: req.body.email,
+      name: req.body.name,
+      phone_number: req.body.phone_number,
+      age: req.body.age,
+      gender: req.body.gender,
+      address: req.body.address,
+      total_treatments: total_treatments,
+      total_cost: total_cost,
+      visit_date: today,
+      next_appointment_date: req.body.next_appointment_date,
+      next_appointment_time: req.body.next_appointment_time,
+      doctor: doctorid,
+      treatments: req.body.treatments,
+      date: today,
+      images: imgs,
+      payment_method: req.body.payment_method,
+    });
 
-    patient = await Patient.findByIdAndUpdate(
-      req.params.id,
-      { total_cost: total_cost },
-      {
-        new: true,
-      }
-    );
-    if (!patient) return res.status(500).send("the patient cannot be updated!");
+    patient = await patient.save();
+
+    if (!patient) return res.status(500).send("The patient cannot be created");
+
     if (patient) {
       const directory = path.join(__dirname + "//../public/uploads/");
       fs.readdir(directory, (err, files) => {
@@ -210,35 +106,40 @@ router.put("/:id", uploadOptions.array("images", 10), async (req, res) => {
           }
         }
       });
+
+      const doc = await Doctor.findById(doctorid);
+      if (patient && doc) {
+        const msg = {
+          to: patient.email, // Change to your recipient
+          from: "docsrecordmail@gmail.com", // Change to your verified sender
+          subject: "Thanks for visiting " + doc.clinic_name,
+          html: `<div>Hello ${patient.name}, <br /> Thanks for visiting <strong> ${doc.clinic_name} </strong> We are happy to help you in your problems. <br />We hope to see you soon. Regards. </div>`,
+        };
+        sgMail
+          .send(msg)
+          .then(() => {
+            console.log("Email sent");
+          })
+          .catch((error) => {
+            console.error(error);
+          });
+      }
+
+      res.send(patient);
+    } else {
+      res.status(401).send("unauthorized user");
     }
-    res.send(patient);
-  } else {
-    let params = {
-      email: req.body.email,
-      name: req.body.name,
-      phone_number: req.body.phone_number,
-      age: req.body.age,
-      gender: req.body.gender,
-      address: req.body.address,
-      total_treatments: total_treatments,
-      total_cost: total_cost,
-      next_appointment_date: req.body.next_appointment_date,
-      next_appointment_time: req.body.next_appointment_time,
-      treatments: req.body.treatments,
-      payment_method: req.body.payment_method,
-    };
-    for (let prop in params) if (!params[prop]) delete params[prop];
+  }
+});
 
-    let patient = await Patient.findByIdAndUpdate(req.params.id, params, {
-      new: true,
-    });
+router.put("/:id", uploadOptions.array("images", 10), async (req, res) => {
+  if (req.user) {
+    const doctor = req.user;
+    const files = req.files;
+    let total_cost = 0;
+    let total_treatments = 0;
 
-    if (!patient) return res.status(500).send("the patient cannot be updated!");
-
-    const appointment = new Date(req.body.next_appointment_date);
-
-    const doc = await Doctor.findById(patient.doctor);
-    let treatments = patient.treatments;
+    let treatments = req.body.treatments;
     if (treatments) {
       treatments.forEach(function (obj) {
         let charges = parseInt(obj.charges, 10);
@@ -246,92 +147,174 @@ router.put("/:id", uploadOptions.array("images", 10), async (req, res) => {
         total_treatments = total_treatments + 1;
       });
     }
+    if (files) {
+      let imgs = [];
 
-    total_cost = total_cost + doc.visit_charges;
-
-    patient = await Patient.findByIdAndUpdate(
-      req.params.id,
-      { total_cost: total_cost },
-      {
-        new: true,
-      }
-    );
-
-    if (patient && doc && req.body.next_appointment_date) {
-      const msg = {
-        to: patient.email, // Change to your recipient
-        from: "docsrecordmail@gmail.com", // Change to your verified sender
-        subject:
-          "Next Appointment at " +
-          doc.clinic_name +
-          " on " +
-          +appointment.getDate() +
-          "/" +
-          appointment.getMonth() +
-          "/" +
-          appointment.getFullYear(),
-        html: `<div>Hello ${
-          patient.name
-        }, <br /> Your Next appointment at <strong> ${
-          doc.clinic_name
-        } </strong> is scheduled on <strong> ${appointment.getDate()} / ${appointment.getMonth()} / ${appointment.getFullYear()}</strong> at ${
-          req.body.next_appointment_time
-        }. <br />We hope to see you soon. Regards. </div>`,
-      };
-      sgMail
-        .send(msg)
-        .then(() => {
-          console.log("Email sent");
-        })
-        .catch((error) => {
-          console.error(error);
+      if (files) {
+        files.map((file) => {
+          imgs.push({
+            data: fs.readFileSync(
+              path.join(__dirname + "//../public/uploads/" + file.filename)
+            ),
+            contentType: "image/png",
+            customId: parseInt(Math.random() * 10000000),
+          });
         });
-    }
+      }
 
-    res.send(patient);
+      let params = {
+        email: req.body.email,
+        name: req.body.name,
+        phone_number: req.body.phone_number,
+        age: req.body.age,
+        gender: req.body.gender,
+        address: req.body.address,
+        total_treatments: total_treatments,
+        total_cost: total_cost,
+        next_appointment_date: req.body.next_appointment_date,
+        next_appointment_time: req.body.next_appointment_time,
+        treatments: req.body.treatments,
+        images: imgs,
+        payment_method: req.body.payment_method,
+      };
+      for (let prop in params) if (!params[prop]) delete params[prop];
+
+      let patient = await Patient.findByIdAndUpdate(req.params.id, params, {
+        new: true,
+      });
+      let treatments = patient.treatments;
+      if (treatments) {
+        treatments.forEach(function (obj) {
+          let charges = parseInt(obj.charges, 10);
+          total_cost = total_cost + charges;
+          total_treatments = total_treatments + 1;
+        });
+      }
+
+      total_cost = total_cost + doctor.visit_charges;
+
+      patient = await Patient.findByIdAndUpdate(
+        req.params.id,
+        { total_cost: total_cost },
+        {
+          new: true,
+        }
+      );
+      if (!patient)
+        return res.status(500).send("the patient cannot be updated!");
+      if (patient) {
+        const directory = path.join(__dirname + "//../public/uploads/");
+        fs.readdir(directory, (err, files) => {
+          if (err) throw err;
+
+          for (const file of files) {
+            if (file !== "demo.txt") {
+              fs.unlink(path.join(directory, file), (err) => {
+                if (err) throw err;
+              });
+            }
+          }
+        });
+      }
+      res.send(patient);
+    } else {
+      let params = {
+        email: req.body.email,
+        name: req.body.name,
+        phone_number: req.body.phone_number,
+        age: req.body.age,
+        gender: req.body.gender,
+        address: req.body.address,
+        total_treatments: total_treatments,
+        total_cost: total_cost,
+        next_appointment_date: req.body.next_appointment_date,
+        next_appointment_time: req.body.next_appointment_time,
+        treatments: req.body.treatments,
+        payment_method: req.body.payment_method,
+      };
+      for (let prop in params) if (!params[prop]) delete params[prop];
+
+      let patient = await Patient.findByIdAndUpdate(req.params.id, params, {
+        new: true,
+      });
+
+      if (!patient)
+        return res.status(500).send("the patient cannot be updated!");
+
+      const appointment = new Date(req.body.next_appointment_date);
+
+      let treatments = patient.treatments;
+      if (treatments) {
+        treatments.forEach(function (obj) {
+          let charges = parseInt(obj.charges, 10);
+          total_cost = total_cost + charges;
+          total_treatments = total_treatments + 1;
+        });
+      }
+
+      total_cost = total_cost + doctor.visit_charges;
+
+      patient = await Patient.findByIdAndUpdate(
+        req.params.id,
+        { total_cost: total_cost },
+        {
+          new: true,
+        }
+      );
+
+      if (patient && doctor && req.body.next_appointment_date) {
+        const month = appointment.getMonth() + 1;
+        const msg = {
+          to: patient.email, // Change to your recipient
+          from: "docsrecordmail@gmail.com", // Change to your verified sender
+          subject:
+            "Next Appointment at " +
+            doctor.clinic_name +
+            " on " +
+            +appointment.getDate() +
+            "/" +
+            month +
+            "/" +
+            appointment.getFullYear(),
+          html: `<div>Hello ${
+            patient.name
+          }, <br /> Your Next appointment at <strong> ${
+            doctor.clinic_name
+          } </strong> is scheduled on <strong> ${appointment.getDate()} / ${month} / ${appointment.getFullYear()}</strong> at ${
+            req.body.next_appointment_time
+          }. <br />We hope to see you soon. Regards. </div>`,
+        };
+        sgMail
+          .send(msg)
+          .then(() => {
+            console.log("Email sent");
+          })
+          .catch((error) => {
+            console.error(error);
+          });
+      }
+
+      res.send(patient);
+    }
+  } else {
+    res.status(401).send("unauthorized user");
   }
 });
 
 router.delete("/:id", async (req, res) => {
-  try {
-    const patient = await Patient.findByIdAndDelete(req.params.id);
-    if (!patient) {
-      return res.status(404).send();
+  if (req.user) {
+    try {
+      const patient = await Patient.findByIdAndDelete(req.params.id);
+      if (!patient) {
+        return res.status(404).send();
+      }
+      res.send("patient succesfully deleted");
+    } catch (error) {
+      res.status(500).send(error);
     }
-    res.send("patient succesfully deleted");
-  } catch (error) {
-    res.status(500).send(error);
+  } else {
+    res.status(401).send("unauthorized user");
   }
-});
-
-router.get(`/get/count`, async (req, res) => {
-  const patientCount = await Patient.countDocuments((count) => count);
-
-  if (!patientCount) {
-    res.status(500).json({ success: false });
-  }
-  res.send({
-    patientCount: patientCount,
-  });
-});
-router.get(`/get/count/:id`, async (req, res) => {
-  const patientCount = await Patient.countDocuments({ doctor: req.params.id });
-
-  if (!patientCount) {
-    res.status(500).json({ success: false });
-  }
-  res.send({
-    patientCount: patientCount,
-  });
-});
-
-router.get(`/:id`, async (req, res) => {
-  const patient = await Patient.findById(req.params.id);
-
-  if (!patient) {
-    res.status(500).json({ success: false });
-  }
-  res.send(patient);
 });
 
 // stats
@@ -353,8 +336,6 @@ async function previousmonthf(id) {
   pmonthData.setUTCHours(0);
   pmonthData.setUTCMinutes(0);
   pmonthData.setSeconds(0);
-  console.log(monthData);
-  console.log(pmonthData);
 
   TODAY = new Date();
   const patientList = await Patient.find({
@@ -391,8 +372,6 @@ async function currentmonthf(id) {
   pmonthData.setUTCHours(0);
   pmonthData.setUTCMinutes(0);
   pmonthData.setSeconds(0);
-  console.log(monthData);
-  console.log(pmonthData);
 
   TODAY = new Date();
   const patientList = await Patient.find({
@@ -584,7 +563,6 @@ async function monthstatsf(id) {
 
   if (monthsstats[0]) {
     var data = monthsstats[0].data;
-    console.log(data);
     let i = 0;
     for (let key in data) {
       const k = data[key];
@@ -611,8 +589,6 @@ async function weekstatsf(id) {
     y = y - daytoday;
   }
 
-  console.log(y);
-  console.log(x);
   let lastweek = new Date();
   let offset = lastweek.getTimezoneOffset();
   lastweek = new Date(lastweek.getTime() - offset * 60000);
@@ -729,32 +705,49 @@ async function bothweekstatsf(id) {
   return week;
 }
 
-router.get(`/stats/:id`, async (req, res) => {
-  const monthstats = await monthstatsf(req.params.id);
-  // if (!monthstats) return res.status(500).send("error at backend! monthstats");
-  const weekstats = await weekstatsf(req.params.id);
-  // if (!weekstats) return res.status(500).send("error at backend! weekstats");
-  const currentmonth = await currentmonthf(req.params.id);
-  // if (!currentmonth) return res.status(500).send("error at backend! currmonth");
-  const previousmonth = await previousmonthf(req.params.id);
-  // if (!previousmonth)
-  //   return res.status(500).send("error at backend! prev month");
-  const bothweekstats = await bothweekstatsf(req.params.id);
-  // if (!bothweekstats) return res.status(500).send("error at backend! bothweek");
+router.get(`/stats`, async (req, res) => {
+  if (req.user) {
+    const monthstats = await monthstatsf(req.user._id);
+    // if (!monthstats) return res.status(500).send("error at backend! monthstats");
+    const weekstats = await weekstatsf(req.user._id);
+    // if (!weekstats) return res.status(500).send("error at backend! weekstats");
+    const currentmonth = await currentmonthf(req.user._id);
+    // if (!currentmonth) return res.status(500).send("error at backend! currmonth");
+    const previousmonth = await previousmonthf(req.user._id);
+    // if (!previousmonth)
+    //   return res.status(500).send("error at backend! prev month");
+    const bothweekstats = await bothweekstatsf(req.user._id);
+    // if (!bothweekstats) return res.status(500).send("error at backend! bothweek");
 
-  const monthpercentage =
-    ((currentmonth - previousmonth) / previousmonth) * 100;
-  const weekpercentage =
-    ((bothweekstats[0] - bothweekstats[1]) / bothweekstats[1]) * 100;
+    const monthpercentage =
+      ((currentmonth - previousmonth) / previousmonth) * 100;
+    const weekpercentage =
+      ((bothweekstats[0] - bothweekstats[1]) / bothweekstats[1]) * 100;
 
-  res.json({
-    monthstats: monthstats,
-    weekstats: weekstats,
-    currentmonth: currentmonth,
-    currentweek: bothweekstats[0],
-    monthpercentage: monthpercentage,
-    weekpercentage: weekpercentage,
-  });
+    res.json({
+      monthstats: monthstats,
+      weekstats: weekstats,
+      currentmonth: currentmonth,
+      currentweek: bothweekstats[0],
+      monthpercentage: monthpercentage,
+      weekpercentage: weekpercentage,
+    });
+  } else {
+    res.status(401).send("unauthorized user");
+  }
+});
+
+router.get(`/:id`, async (req, res) => {
+  if (req.user) {
+    const patient = await Patient.findById(req.params.id);
+
+    if (!patient) {
+      res.status(500).json({ success: false });
+    }
+    res.send(patient);
+  } else {
+    res.status(401).send("unauthorized user");
+  }
 });
 
 module.exports = router;

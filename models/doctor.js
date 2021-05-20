@@ -3,20 +3,23 @@ const mongoose = require("mongoose");
 const doctorSchema = mongoose.Schema({
   email: {
     type: String,
-    required: true,
+    default: "",
   },
-  password: {
+  googleId: {
     type: String,
-
     required: true,
   },
   name: {
     type: String,
     required: true,
   },
+  username: {
+    type: String,
+    required: true,
+  },
   phone_number: {
     type: Number,
-    required: true,
+    default: 0,
   },
   qualifications: {
     type: String,
