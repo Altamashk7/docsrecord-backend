@@ -37,11 +37,19 @@ mongoose.connect(process.env.CONNECTION_STRING, {
 app.use(express.json());
 app.use(cors({ origin: "http://localhost:3001", credentials: true }));
 app.use(express.urlencoded({ extended: true }));
+
+app.set("trust proxy", 1);
+
 app.use(
   session({
     secret: process.env.secret,
     resave: true,
     saveUninitialized: true,
+    cookie: {
+      sameSite: "none",
+      secure: true,
+      maxAge: 1000 * 60 * 60 * 24 * 7, // 1 week
+    },
   })
 );
 
