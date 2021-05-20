@@ -8,6 +8,7 @@ const GoogleStrategy = require("passport-google-oauth20").Strategy;
 const { Doctor } = require("./models/doctor");
 
 const app = express();
+app.set("trust proxy", 1);
 
 //to generate random ids
 function makeid(length) {
@@ -35,8 +36,6 @@ mongoose.connect(process.env.CONNECTION_STRING, {
 app.use(express.json());
 app.use(cors({ origin: "https://www.docsrecord.com", credentials: true }));
 app.use(express.urlencoded({ extended: true }));
-
-app.set("trust proxy", 1);
 
 app.use(
   session({
