@@ -16,7 +16,7 @@ const doctorSchema = mongoose.Schema({
   },
   phone_number: {
     type: Number,
-    required: true,
+    default: 0,
   },
   qualifications: {
     type: String,
