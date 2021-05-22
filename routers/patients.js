@@ -57,8 +57,8 @@ router.post(`/`, uploadOptions.array("images", 10), async (req, res) => {
   if (!doctor) return res.status(400).send("Invalid doctor");
 
   let today = new Date();
-  let offset = today.getTimezoneOffset();
-  today = new Date(today.getTime() - offset * 60000);
+  // let offset = today.getTimezoneOffset();
+  // today = new Date(today.getTime() - offset * 60000);
   let total_cost = doctor.visit_charges;
   let total_treatments = 0;
   let treatments = req.body.treatments;
@@ -332,6 +332,25 @@ router.get(`/:id`, async (req, res) => {
     res.status(500).json({ success: false });
   }
   res.send(patient);
+});
+
+router.get(`/appointments/:id`, async (req, res) => {
+  const today = new Date();
+  today.setUTCHours(0);
+  today.setUTCMinutes(0);
+  today.setSeconds(0);
+  var doctorid = mongoose.Types.ObjectId(req.params.id);
+  const patientList = await Patient.find({
+    next_appointment_date: {
+      $gte: today,
+    },
+    doctor: doctorid,
+  }).sort({ date: -1 });
+
+  if (!patientList) {
+    res.status(500).json({ success: false });
+  }
+  res.send(patientList);
 });
 
 // stats
@@ -628,6 +647,9 @@ async function weekstatsf(id) {
   today.setSeconds(59);
   // var k = new Date(new Date().getTime() - x * 24 * 60 * 60 * 1000);
   // var h = new Date(new Date().getTime() + y * 24 * 60 * 60 * 1000);
+  console.log("week");
+  console.log(lastweek);
+  console.log(today);
   const patientListweek = await Patient.find({
     date: {
       $gte: lastweek,
@@ -641,6 +663,8 @@ async function weekstatsf(id) {
   for (let key in patientListweek) {
     const patient = patientListweek[key];
     const day = patient.date.getDay();
+    console.log(patient.date);
+    console.log(day);
 
     week[day] = week[day] + 1;
   }
