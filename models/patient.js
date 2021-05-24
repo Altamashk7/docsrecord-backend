@@ -3,6 +3,7 @@ const mongoose = require("mongoose");
 const patientSchema = mongoose.Schema({
   email: {
     type: String,
+    default: "",
   },
   name: {
     type: String,
@@ -10,24 +11,31 @@ const patientSchema = mongoose.Schema({
   },
   phone_number: {
     type: String,
+    default: "",
   },
   age: {
     type: Number,
+    default: 0,
   },
   gender: {
     type: String,
+    default: "",
   },
   address: {
     type: String,
+    default: "",
   },
   payment_method: {
     type: String,
+    default: "",
   },
   total_treatments: {
     type: Number,
+    default: "",
   },
   total_cost: {
     type: Number,
+    default: 0,
   },
   visit_date: {
     type: Date,

@@ -599,7 +599,9 @@ async function monthstatsf(id) {
       },
     },
   ]);
-  var monthsarray = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+  var monthsarray = [];
+  var d = new Date();
+  var n = d.getMonth();
 
   if (monthsstats[0]) {
     var data = monthsstats[0].data;
@@ -607,7 +609,8 @@ async function monthstatsf(id) {
     let i = 0;
     for (let key in data) {
       const k = data[key];
-      monthsarray[i] = k;
+      if (i > n) break;
+      monthsarray.push(k);
       i = i + 1;
     }
   }
@@ -668,6 +671,9 @@ async function weekstatsf(id) {
 
     week[day] = week[day] + 1;
   }
+  var d = new Date();
+  var n = d.getDay();
+  if (n != 0) week = week.slice(0, n + 1);
 
   return week;
 }
