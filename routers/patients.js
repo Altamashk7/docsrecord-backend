@@ -133,17 +133,23 @@ router.post(`/`, uploadOptions.array("images", 10), async (req, res) => {
 
 router.put("/:id", uploadOptions.array("images", 10), async (req, res) => {
   const files = req.files;
-  let total_cost = 0;
+
+  total_cost = 0;
   let total_treatments = 0;
 
   let treatments = req.body.treatments;
   if (treatments) {
-    treatments.forEach(function (obj) {
-      let charges = parseInt(obj.charges, 10);
-      total_cost = total_cost + charges;
-      total_treatments = total_treatments + 1;
-    });
+    if (treatments.length !== 0) {
+      treatments.forEach(function (obj) {
+        console.log("heloo");
+        let charges = parseInt(obj.charges, 10);
+        total_cost = total_cost + charges;
+        total_treatments = total_treatments + 1;
+      });
+    }
   }
+  console.log("gggggg");
+  console.log(total_cost);
   if (files) {
     let imgs = [];
 
@@ -179,14 +185,14 @@ router.put("/:id", uploadOptions.array("images", 10), async (req, res) => {
     let patient = await Patient.findByIdAndUpdate(req.params.id, params, {
       new: true,
     });
-    let treatments = patient.treatments;
-    if (treatments) {
-      treatments.forEach(function (obj) {
-        let charges = parseInt(obj.charges, 10);
-        total_cost = total_cost + charges;
-        total_treatments = total_treatments + 1;
-      });
-    }
+    // let treatments = patient.treatments;
+    // if (treatments) {
+    //   treatments.forEach(function (obj) {
+    //     let charges = parseInt(obj.charges, 10);
+    //     total_cost = total_cost + charges;
+    //     total_treatments = total_treatments + 1;
+    //   });
+    // }
 
     const doctor = await Doctor.findById(patient.doctor);
     total_cost = total_cost + doctor.visit_charges;
@@ -239,21 +245,20 @@ router.put("/:id", uploadOptions.array("images", 10), async (req, res) => {
 
     const appointment = new Date(req.body.next_appointment_date);
 
+    // let treatments = patient.treatments;
+    // if (treatments) {
+    //   treatments.forEach(function (obj) {
+    //     let charges = parseInt(obj.charges, 10);
+    //     total_cost = total_cost + charges;
+    //     total_treatments = total_treatments + 1;
+    //   });
+    // }
     const doc = await Doctor.findById(patient.doctor);
-    let treatments = patient.treatments;
-    if (treatments) {
-      treatments.forEach(function (obj) {
-        let charges = parseInt(obj.charges, 10);
-        total_cost = total_cost + charges;
-        total_treatments = total_treatments + 1;
-      });
-    }
-
     total_cost = total_cost + doc.visit_charges;
 
     patient = await Patient.findByIdAndUpdate(
       req.params.id,
-      { total_cost: total_cost },
+      { total_cost: total_cost, total_treatments: total_treatments },
       {
         new: true,
       }
