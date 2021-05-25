@@ -141,15 +141,13 @@ router.put("/:id", uploadOptions.array("images", 10), async (req, res) => {
   if (treatments) {
     if (treatments.length !== 0) {
       treatments.forEach(function (obj) {
-        console.log("heloo");
         let charges = parseInt(obj.charges, 10);
         total_cost = total_cost + charges;
         total_treatments = total_treatments + 1;
       });
     }
   }
-  console.log("gggggg");
-  console.log(total_cost);
+
   if (files) {
     let imgs = [];
 
@@ -185,14 +183,6 @@ router.put("/:id", uploadOptions.array("images", 10), async (req, res) => {
     let patient = await Patient.findByIdAndUpdate(req.params.id, params, {
       new: true,
     });
-    // let treatments = patient.treatments;
-    // if (treatments) {
-    //   treatments.forEach(function (obj) {
-    //     let charges = parseInt(obj.charges, 10);
-    //     total_cost = total_cost + charges;
-    //     total_treatments = total_treatments + 1;
-    //   });
-    // }
 
     const doctor = await Doctor.findById(patient.doctor);
     total_cost = total_cost + doctor.visit_charges;
@@ -245,14 +235,6 @@ router.put("/:id", uploadOptions.array("images", 10), async (req, res) => {
 
     const appointment = new Date(req.body.next_appointment_date);
 
-    // let treatments = patient.treatments;
-    // if (treatments) {
-    //   treatments.forEach(function (obj) {
-    //     let charges = parseInt(obj.charges, 10);
-    //     total_cost = total_cost + charges;
-    //     total_treatments = total_treatments + 1;
-    //   });
-    // }
     const doc = await Doctor.findById(patient.doctor);
     total_cost = total_cost + doc.visit_charges;
 
@@ -379,8 +361,6 @@ async function previousmonthf(id) {
   pmonthData.setUTCHours(0);
   pmonthData.setUTCMinutes(0);
   pmonthData.setSeconds(0);
-  console.log(monthData);
-  console.log(pmonthData);
 
   TODAY = new Date();
   const patientList = await Patient.find({
@@ -417,8 +397,6 @@ async function currentmonthf(id) {
   pmonthData.setUTCHours(0);
   pmonthData.setUTCMinutes(0);
   pmonthData.setSeconds(0);
-  console.log(monthData);
-  console.log(pmonthData);
 
   TODAY = new Date();
   const patientList = await Patient.find({
@@ -612,7 +590,6 @@ async function monthstatsf(id) {
 
   if (monthsstats[0]) {
     var data = monthsstats[0].data;
-    console.log(data);
     let i = 0;
     for (let key in data) {
       const k = data[key];
@@ -640,8 +617,6 @@ async function weekstatsf(id) {
     y = y - daytoday;
   }
 
-  console.log(y);
-  console.log(x);
   let lastweek = new Date();
   let offset = lastweek.getTimezoneOffset();
   lastweek = new Date(lastweek.getTime() - offset * 60000);
@@ -655,11 +630,7 @@ async function weekstatsf(id) {
   today.setUTCHours(23);
   today.setUTCMinutes(59);
   today.setSeconds(59);
-  // var k = new Date(new Date().getTime() - x * 24 * 60 * 60 * 1000);
-  // var h = new Date(new Date().getTime() + y * 24 * 60 * 60 * 1000);
-  console.log("week");
-  console.log(lastweek);
-  console.log(today);
+
   const patientListweek = await Patient.find({
     date: {
       $gte: lastweek,
@@ -673,8 +644,6 @@ async function weekstatsf(id) {
   for (let key in patientListweek) {
     const patient = patientListweek[key];
     const day = patient.date.getDay();
-    console.log(patient.date);
-    console.log(day);
 
     week[day] = week[day] + 1;
   }

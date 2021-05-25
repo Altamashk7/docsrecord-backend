@@ -204,11 +204,6 @@ router.post("/register", uploadOptions.single("image"), async (req, res) => {
         name: req.body.name,
         register_date: day,
         payment_valid_till: pay,
-        // clinic_name: req.body.clinic_name,
-        // clinic_address: req.body.clinic_address,
-        // visit_charges: req.body.visit_charges,
-        // timings: req.body.timings,
-        // qualifications: req.body.qualifications,
         phone_number: req.body.phone_number,
       });
       doctor = await doctor.save();
