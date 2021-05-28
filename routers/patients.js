@@ -114,13 +114,13 @@ router.post(`/`, uploadOptions.array("images", 10), async (req, res) => {
     const msg = {
       to: patient.email, // Change to your recipient
       from: "docsrecordmail@gmail.com", // Change to your verified sender
-      subject: "Thanks for visiting " + doc.clinic_name,
+      subject: "Thanks for visiting " + doctor.clinic_name,
       html: `
       <div>
         Hello ${patient.name}, 
         <br /> 
         <br />
-        Thanks for visiting <strong> ${doc.clinic_name}.</strong> We are happy to help you.
+        Thanks for visiting <strong> ${doctor.clinic_name}.</strong> We are happy to help you.
         <br />
         Have a speedy recovery. Regards.
       </div>`,
