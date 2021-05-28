@@ -21,6 +21,9 @@ const patientSchema = mongoose.Schema({
     type: String,
     default: "",
   },
+  date_of_birth: {
+    type: Date,
+  },
   address: {
     type: String,
     default: "",

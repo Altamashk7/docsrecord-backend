@@ -59,8 +59,7 @@ router.post(`/`, uploadOptions.array("images", 10), async (req, res) => {
   if (!doctor) return res.status(400).send("Invalid doctor");
 
   let today = new Date();
-  // let offset = today.getTimezoneOffset();
-  // today = new Date(today.getTime() - offset * 60000);
+
   let total_cost = doctor.visit_charges;
   let total_treatments = 0;
   let treatments = req.body.treatments;
@@ -89,6 +88,7 @@ router.post(`/`, uploadOptions.array("images", 10), async (req, res) => {
     date: today,
     images: imgs,
     payment_method: req.body.payment_method,
+    date_of_birth: req.body.date_of_birth,
   });
 
   patient = await patient.save();
@@ -110,13 +110,20 @@ router.post(`/`, uploadOptions.array("images", 10), async (req, res) => {
     });
   }
 
-  const doc = await Doctor.findById(doctorid);
-  if (patient && doc) {
+  if (patient && doctor) {
     const msg = {
       to: patient.email, // Change to your recipient
       from: "docsrecordmail@gmail.com", // Change to your verified sender
       subject: "Thanks for visiting " + doc.clinic_name,
-      html: `<div>Hello ${patient.name}, <br /> Thanks for visiting <strong> ${doc.clinic_name} </strong> We are happy to help you in your problems. <br />We hope to see you soon. Regards. </div>`,
+      html: `
+      <div>
+        Hello ${patient.name}, 
+        <br /> 
+        <br />
+        Thanks for visiting <strong> ${doc.clinic_name}.</strong> We are happy to help you.
+        <br />
+        Have a speedy recovery. Regards.
+      </div>`,
     };
     sgMail
       .send(msg)
@@ -129,6 +136,19 @@ router.post(`/`, uploadOptions.array("images", 10), async (req, res) => {
   }
 
   res.send(patient);
+});
+
+router.put("/deleteImages/:id", async (req, res) => {
+  console.log(req.body.images);
+  const updatedPatient = await Patient.findByIdAndUpdate(req.params.id, {
+    images: req.body.images,
+  });
+
+  if (updatedPatient) {
+    res.send(updatedPatient);
+  } else {
+    res.status(400).json({ message: "Some error occured !" });
+  }
 });
 
 router.put("/:id", uploadOptions.array("images", 10), async (req, res) => {
@@ -177,6 +197,7 @@ router.put("/:id", uploadOptions.array("images", 10), async (req, res) => {
       treatments: req.body.treatments,
       images: imgs,
       payment_method: req.body.payment_method,
+      date_of_birth: req.body.date_of_birth,
     };
     for (let prop in params) if (!params[prop]) delete params[prop];
 
@@ -224,6 +245,7 @@ router.put("/:id", uploadOptions.array("images", 10), async (req, res) => {
       next_appointment_time: req.body.next_appointment_time,
       treatments: req.body.treatments,
       payment_method: req.body.payment_method,
+      date_of_birth: req.body.date_of_birth,
     };
     for (let prop in params) if (!params[prop]) delete params[prop];
 
