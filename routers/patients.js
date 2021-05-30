@@ -152,6 +152,9 @@ router.put("/deleteImages/:id", async (req, res) => {
 });
 
 router.put("/:id", uploadOptions.array("images", 10), async (req, res) => {
+  const patientimg = await Patient.findById(req.params.id);
+  console.log(patientimg.images);
+
   const files = req.files;
 
   total_cost = 0;
@@ -198,23 +201,26 @@ router.put("/:id", uploadOptions.array("images", 10), async (req, res) => {
       images: imgs,
       payment_method: req.body.payment_method,
       date_of_birth: req.body.date_of_birth,
+      total_cost: total_cost,
+      total_treatments: total_treatments,
     };
-    for (let prop in params) if (!params[prop]) delete params[prop];
+    for (let prop in params)
+      if (params[prop] === undefined) delete params[prop];
 
     let patient = await Patient.findByIdAndUpdate(req.params.id, params, {
       new: true,
     });
 
-    const doctor = await Doctor.findById(patient.doctor);
-    total_cost = total_cost + doctor.visit_charges;
+    // const doctor = await Doctor.findById(patient.doctor);
+    // total_cost = total_cost + doctor.visit_charges;
 
-    patient = await Patient.findByIdAndUpdate(
-      req.params.id,
-      { total_cost: total_cost },
-      {
-        new: true,
-      }
-    );
+    // patient = await Patient.findByIdAndUpdate(
+    //   req.params.id,
+    //   { total_cost: total_cost },
+    //   {
+    //     new: true,
+    //   }
+    // );
     if (!patient) return res.status(500).send("the patient cannot be updated!");
     if (patient) {
       const directory = path.join(__dirname + "//../public/uploads/");
@@ -232,6 +238,8 @@ router.put("/:id", uploadOptions.array("images", 10), async (req, res) => {
     }
     res.send(patient);
   } else {
+    const doc = await Doctor.findById(req.body.doctor);
+    total_cost = total_cost + doc.visit_charges;
     let params = {
       email: req.body.email,
       name: req.body.name,
@@ -246,8 +254,11 @@ router.put("/:id", uploadOptions.array("images", 10), async (req, res) => {
       treatments: req.body.treatments,
       payment_method: req.body.payment_method,
       date_of_birth: req.body.date_of_birth,
+      total_cost: total_cost,
+      total_treatments: total_treatments,
     };
-    for (let prop in params) if (!params[prop]) delete params[prop];
+    for (let prop in params)
+      if (params[prop] === undefined) delete params[prop];
 
     let patient = await Patient.findByIdAndUpdate(req.params.id, params, {
       new: true,
@@ -257,16 +268,16 @@ router.put("/:id", uploadOptions.array("images", 10), async (req, res) => {
 
     const appointment = new Date(req.body.next_appointment_date);
 
-    const doc = await Doctor.findById(patient.doctor);
-    total_cost = total_cost + doc.visit_charges;
+    // const doc = await Doctor.findById(patient.doctor);
+    // total_cost = total_cost + doc.visit_charges;
 
-    patient = await Patient.findByIdAndUpdate(
-      req.params.id,
-      { total_cost: total_cost, total_treatments: total_treatments },
-      {
-        new: true,
-      }
-    );
+    // patient = await Patient.findByIdAndUpdate(
+    //   req.params.id,
+    //   { total_cost: total_cost, total_treatments: total_treatments },
+    //   {
+    //     new: true,
+    //   }
+    // );
 
     if (patient && doc && req.body.next_appointment_date) {
       const msg = {
