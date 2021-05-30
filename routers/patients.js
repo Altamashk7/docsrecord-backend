@@ -89,6 +89,7 @@ router.post(`/`, uploadOptions.array("images", 10), async (req, res) => {
     images: imgs,
     payment_method: req.body.payment_method,
     date_of_birth: req.body.date_of_birth,
+    comments: req.body.comments,
   });
 
   patient = await patient.save();
@@ -198,6 +199,7 @@ router.put("/:id", uploadOptions.array("images", 10), async (req, res) => {
       images: imgs,
       payment_method: req.body.payment_method,
       date_of_birth: req.body.date_of_birth,
+      comments: req.body.comments,
     };
     for (let prop in params) if (!params[prop]) delete params[prop];
 
@@ -246,6 +248,7 @@ router.put("/:id", uploadOptions.array("images", 10), async (req, res) => {
       treatments: req.body.treatments,
       payment_method: req.body.payment_method,
       date_of_birth: req.body.date_of_birth,
+      comments: req.body.comments,
     };
     for (let prop in params) if (!params[prop]) delete params[prop];
 
