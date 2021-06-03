@@ -226,18 +226,6 @@ router.post(`/`, uploadOptions.array("images", 10), async (req, res) => {
   res.send(patient);
 });
 
-router.put("/deleteImages/:id", async (req, res) => {
-  const updatedPatient = await Patient.findByIdAndUpdate(req.params.id, {
-    images: req.body.images,
-  });
-
-  if (updatedPatient) {
-    res.send(updatedPatient);
-  } else {
-    res.status(400).json({ message: "Some error occured !" });
-  }
-});
-
 router.put("/:id", uploadOptions.array("images", 10), async (req, res) => {
   const files = req.files;
 
