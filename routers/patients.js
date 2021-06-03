@@ -3,26 +3,12 @@ const express = require("express");
 const { Doctor } = require("../models/doctor");
 const router = express.Router();
 const mongoose = require("mongoose");
-const multer = require("multer");
 const sgMail = require("@sendgrid/mail");
-const fs = require("fs");
-const path = require("path");
 const upload = require("../services/file-upload");
 const aws = require("aws-sdk");
 require("dotenv").config();
 
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
-
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, "public/uploads");
-  },
-  filename: (req, file, cb) => {
-    cb(null, file.fieldname + "-" + Date.now());
-  },
-});
-
-const uploadOptions = multer({ storage: storage });
 
 //new routes
 
@@ -52,7 +38,7 @@ router.put("/image-upload/:id", async (req, res) => {
     }
 
     let files = req.files;
-    console.log(files);
+
     if (files) {
       files.map((file) => {
         imagesPaths.push(file);
@@ -68,6 +54,17 @@ router.put("/image-upload/:id", async (req, res) => {
     if (!patient) return res.status(400).send("the images cannot be updated!");
 
     res.send(patient);
+  });
+});
+router.put("/pdf-upload", async (req, res) => {
+  singleUpload(req, res, async (err) => {
+    if (err) {
+      return res.status(422).send({
+        errors: [{ title: "File Upload Error", detail: err.message }],
+      });
+    }
+
+    res.send(req.files);
   });
 });
 
@@ -106,7 +103,6 @@ router.put("/:id/deleteimage/:key", async (req, res) => {
 
   res.send(patient);
 });
-//old routes
 
 router.get(`/`, async (req, res) => {
   // localhost:3000/patients?doctor=2342342
@@ -126,21 +122,7 @@ router.get(`/`, async (req, res) => {
   res.send(patientList);
 });
 
-router.post(`/`, uploadOptions.array("images", 10), async (req, res) => {
-  const files = req.files;
-  let imgs = [];
-
-  if (files) {
-    files.map((file) => {
-      imgs.push({
-        data: fs.readFileSync(
-          path.join(__dirname + "//../public/uploads/" + file.filename)
-        ),
-        contentType: "image/png",
-        customId: parseInt(Math.random() * 10000000),
-      });
-    });
-  }
+router.post(`/`, async (req, res) => {
   var doctorid = mongoose.Types.ObjectId(req.body.doctor);
   const doctor = await Doctor.findById(doctorid);
   if (!doctor) return res.status(400).send("Invalid doctor");
@@ -173,7 +155,6 @@ router.post(`/`, uploadOptions.array("images", 10), async (req, res) => {
     doctor: doctorid,
     treatments: req.body.treatments,
     date: today,
-    images: imgs,
     payment_method: req.body.payment_method,
     date_of_birth: req.body.date_of_birth,
     comments: req.body.comments,
@@ -182,21 +163,6 @@ router.post(`/`, uploadOptions.array("images", 10), async (req, res) => {
   patient = await patient.save();
 
   if (!patient) return res.status(500).send("The patient cannot be created");
-
-  if (patient) {
-    const directory = path.join(__dirname + "//../public/uploads/");
-    fs.readdir(directory, (err, files) => {
-      if (err) throw err;
-
-      for (const file of files) {
-        if (file !== "demo.txt") {
-          fs.unlink(path.join(directory, file), (err) => {
-            if (err) throw err;
-          });
-        }
-      }
-    });
-  }
 
   if (patient && doctor) {
     const msg = {
@@ -226,8 +192,8 @@ router.post(`/`, uploadOptions.array("images", 10), async (req, res) => {
   res.send(patient);
 });
 
-router.put("/:id", uploadOptions.array("images", 10), async (req, res) => {
-  const files = req.files;
+router.put("/:id", async (req, res) => {
+  const doc = await Doctor.findById(req.body.doctor);
 
   total_cost = 0;
   let total_treatments = 0;
@@ -242,132 +208,73 @@ router.put("/:id", uploadOptions.array("images", 10), async (req, res) => {
       });
     }
   }
+  total_cost = total_cost + doc.visit_charges;
 
-  if (files) {
-    let imgs = [];
+  let params = {
+    email: req.body.email,
+    name: req.body.name,
+    phone_number: req.body.phone_number,
+    age: req.body.age,
+    gender: req.body.gender,
+    address: req.body.address,
+    total_treatments: total_treatments,
+    total_cost: total_cost,
+    next_appointment_date: req.body.next_appointment_date,
+    next_appointment_time: req.body.next_appointment_time,
+    treatments: req.body.treatments,
+    payment_method: req.body.payment_method,
+    date_of_birth: req.body.date_of_birth,
+    comments: req.body.comments,
+  };
+  for (let prop in params) if (params[prop] === undefined) delete params[prop];
 
-    if (files) {
-      files.map((file) => {
-        imgs.push({
-          data: fs.readFileSync(
-            path.join(__dirname + "//../public/uploads/" + file.filename)
-          ),
-          contentType: "image/png",
-          customId: parseInt(Math.random() * 10000000),
+  let patient = await Patient.findByIdAndUpdate(req.params.id, params, {
+    new: true,
+  });
+
+  if (!patient) return res.status(500).send("the patient cannot be updated!");
+
+  const appointment = new Date(req.body.next_appointment_date);
+
+  if (
+    patient &&
+    doc &&
+    req.body.next_appointment_date &&
+    req.body.next_appointment_time !== undefined
+  ) {
+    if (!!doc.clinic_name) {
+      const msg = {
+        to: patient.email, // Change to your recipient
+        from: "docsrecordmail@gmail.com", // Change to your verified sender
+        subject:
+          "Next Appointment at " +
+          doc.clinic_name +
+          " on " +
+          +appointment.getDate() +
+          "/" +
+          appointment.getMonth() +
+          "/" +
+          appointment.getFullYear(),
+        html: `<div>Hello ${
+          patient.name
+        }, <br /> Your Next appointment at <strong> ${
+          doc.clinic_name
+        } </strong> is scheduled on <strong> ${appointment.getDate()} / ${appointment.getMonth()} / ${appointment.getFullYear()}</strong> at ${
+          req.body.next_appointment_time
+        }. <br />We hope to see you soon. Regards. </div>`,
+      };
+      sgMail
+        .send(msg)
+        .then(() => {
+          console.log("Email sent");
+        })
+        .catch((error) => {
+          console.error(error);
         });
-      });
     }
-
-    let params = {
-      email: req.body.email,
-      name: req.body.name,
-      phone_number: req.body.phone_number,
-      age: req.body.age,
-      gender: req.body.gender,
-      address: req.body.address,
-      total_treatments: total_treatments,
-      total_cost: total_cost,
-      next_appointment_date: req.body.next_appointment_date,
-      next_appointment_time: req.body.next_appointment_time,
-      treatments: req.body.treatments,
-      images: imgs,
-      payment_method: req.body.payment_method,
-      date_of_birth: req.body.date_of_birth,
-      comments: req.body.comments,
-    };
-    for (let prop in params)
-      if (params[prop] === undefined) delete params[prop];
-
-    let patient = await Patient.findByIdAndUpdate(req.params.id, params, {
-      new: true,
-    });
-
-    if (!patient) return res.status(500).send("the patient cannot be updated!");
-    if (patient) {
-      const directory = path.join(__dirname + "//../public/uploads/");
-      fs.readdir(directory, (err, files) => {
-        if (err) throw err;
-
-        for (const file of files) {
-          if (file !== "demo.txt") {
-            fs.unlink(path.join(directory, file), (err) => {
-              if (err) throw err;
-            });
-          }
-        }
-      });
-    }
-    res.send(patient);
-  } else {
-    const doc = await Doctor.findById(req.body.doctor);
-    total_cost = total_cost + doc.visit_charges;
-    let params = {
-      email: req.body.email,
-      name: req.body.name,
-      phone_number: req.body.phone_number,
-      age: req.body.age,
-      gender: req.body.gender,
-      address: req.body.address,
-      total_treatments: total_treatments,
-      total_cost: total_cost,
-      next_appointment_date: req.body.next_appointment_date,
-      next_appointment_time: req.body.next_appointment_time,
-      treatments: req.body.treatments,
-      payment_method: req.body.payment_method,
-      date_of_birth: req.body.date_of_birth,
-      comments: req.body.comments,
-    };
-    for (let prop in params)
-      if (params[prop] === undefined) delete params[prop];
-
-    let patient = await Patient.findByIdAndUpdate(req.params.id, params, {
-      new: true,
-    });
-
-    if (!patient) return res.status(500).send("the patient cannot be updated!");
-
-    const appointment = new Date(req.body.next_appointment_date);
-
-    if (
-      patient &&
-      doc &&
-      req.body.next_appointment_date &&
-      req.body.next_appointment_time !== undefined
-    ) {
-      if (!!doc.clinic_name) {
-        const msg = {
-          to: patient.email, // Change to your recipient
-          from: "docsrecordmail@gmail.com", // Change to your verified sender
-          subject:
-            "Next Appointment at " +
-            doc.clinic_name +
-            " on " +
-            +appointment.getDate() +
-            "/" +
-            appointment.getMonth() +
-            "/" +
-            appointment.getFullYear(),
-          html: `<div>Hello ${
-            patient.name
-          }, <br /> Your Next appointment at <strong> ${
-            doc.clinic_name
-          } </strong> is scheduled on <strong> ${appointment.getDate()} / ${appointment.getMonth()} / ${appointment.getFullYear()}</strong> at ${
-            req.body.next_appointment_time
-          }. <br />We hope to see you soon. Regards. </div>`,
-        };
-        sgMail
-          .send(msg)
-          .then(() => {
-            console.log("Email sent");
-          })
-          .catch((error) => {
-            console.error(error);
-          });
-      }
-    }
-
-    res.send(patient);
   }
+
+  res.send(patient);
 });
 
 router.delete("/:id", async (req, res) => {
