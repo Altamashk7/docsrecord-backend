@@ -176,6 +176,7 @@ router.post(`/`, uploadOptions.array("images", 10), async (req, res) => {
     images: imgs,
     payment_method: req.body.payment_method,
     date_of_birth: req.body.date_of_birth,
+    comments: req.body.comments,
   });
 
   patient = await patient.save();
@@ -226,7 +227,6 @@ router.post(`/`, uploadOptions.array("images", 10), async (req, res) => {
 });
 
 router.put("/deleteImages/:id", async (req, res) => {
-  console.log(req.body.images);
   const updatedPatient = await Patient.findByIdAndUpdate(req.params.id, {
     images: req.body.images,
   });
@@ -239,9 +239,6 @@ router.put("/deleteImages/:id", async (req, res) => {
 });
 
 router.put("/:id", uploadOptions.array("images", 10), async (req, res) => {
-  const patientimg = await Patient.findById(req.params.id);
-  console.log(patientimg.images);
-
   const files = req.files;
 
   total_cost = 0;
@@ -288,8 +285,7 @@ router.put("/:id", uploadOptions.array("images", 10), async (req, res) => {
       images: imgs,
       payment_method: req.body.payment_method,
       date_of_birth: req.body.date_of_birth,
-      total_cost: total_cost,
-      total_treatments: total_treatments,
+      comments: req.body.comments,
     };
     for (let prop in params)
       if (params[prop] === undefined) delete params[prop];
@@ -331,8 +327,7 @@ router.put("/:id", uploadOptions.array("images", 10), async (req, res) => {
       treatments: req.body.treatments,
       payment_method: req.body.payment_method,
       date_of_birth: req.body.date_of_birth,
-      total_cost: total_cost,
-      total_treatments: total_treatments,
+      comments: req.body.comments,
     };
     for (let prop in params)
       if (params[prop] === undefined) delete params[prop];
@@ -345,46 +340,42 @@ router.put("/:id", uploadOptions.array("images", 10), async (req, res) => {
 
     const appointment = new Date(req.body.next_appointment_date);
 
-    // const doc = await Doctor.findById(patient.doctor);
-    // total_cost = total_cost + doc.visit_charges;
-
-    // patient = await Patient.findByIdAndUpdate(
-    //   req.params.id,
-    //   { total_cost: total_cost, total_treatments: total_treatments },
-    //   {
-    //     new: true,
-    //   }
-    // );
-
-    if (patient && doc && req.body.next_appointment_date) {
-      const msg = {
-        to: patient.email, // Change to your recipient
-        from: "docsrecordmail@gmail.com", // Change to your verified sender
-        subject:
-          "Next Appointment at " +
-          doc.clinic_name +
-          " on " +
-          +appointment.getDate() +
-          "/" +
-          appointment.getMonth() +
-          "/" +
-          appointment.getFullYear(),
-        html: `<div>Hello ${
-          patient.name
-        }, <br /> Your Next appointment at <strong> ${
-          doc.clinic_name
-        } </strong> is scheduled on <strong> ${appointment.getDate()} / ${appointment.getMonth()} / ${appointment.getFullYear()}</strong> at ${
-          req.body.next_appointment_time
-        }. <br />We hope to see you soon. Regards. </div>`,
-      };
-      sgMail
-        .send(msg)
-        .then(() => {
-          console.log("Email sent");
-        })
-        .catch((error) => {
-          console.error(error);
-        });
+    if (
+      patient &&
+      doc &&
+      req.body.next_appointment_date &&
+      req.body.next_appointment_time !== undefined
+    ) {
+      if (!!doc.clinic_name) {
+        const msg = {
+          to: patient.email, // Change to your recipient
+          from: "docsrecordmail@gmail.com", // Change to your verified sender
+          subject:
+            "Next Appointment at " +
+            doc.clinic_name +
+            " on " +
+            +appointment.getDate() +
+            "/" +
+            appointment.getMonth() +
+            "/" +
+            appointment.getFullYear(),
+          html: `<div>Hello ${
+            patient.name
+          }, <br /> Your Next appointment at <strong> ${
+            doc.clinic_name
+          } </strong> is scheduled on <strong> ${appointment.getDate()} / ${appointment.getMonth()} / ${appointment.getFullYear()}</strong> at ${
+            req.body.next_appointment_time
+          }. <br />We hope to see you soon. Regards. </div>`,
+        };
+        sgMail
+          .send(msg)
+          .then(() => {
+            console.log("Email sent");
+          })
+          .catch((error) => {
+            console.error(error);
+          });
+      }
     }
 
     res.send(patient);
