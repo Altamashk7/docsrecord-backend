@@ -7,6 +7,9 @@ const multer = require("multer");
 const sgMail = require("@sendgrid/mail");
 const fs = require("fs");
 const path = require("path");
+const upload = require("../services/file-upload");
+const aws = require("aws-sdk");
+require("dotenv").config();
 
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
@@ -20,6 +23,90 @@ const storage = multer.diskStorage({
 });
 
 const uploadOptions = multer({ storage: storage });
+
+//new routes
+
+aws.config.update({
+  secretAccessKey: process.env.AWS_SECRET_ACCESS,
+  accessKeyId: process.env.AWS_ACCESS_KEY,
+  region: "ap-south-1",
+});
+
+const singleUpload = upload.array("images", 3);
+
+router.put("/image-upload/:id", async (req, res) => {
+  const patientimg = await Patient.findById(req.params.id);
+  let imagesPaths = [];
+  let imagesPatient = patientimg.images;
+  if (imagesPatient) {
+    imagesPatient.map((file) => {
+      imagesPaths.push(file);
+    });
+  }
+
+  singleUpload(req, res, async (err) => {
+    if (err) {
+      return res.status(422).send({
+        errors: [{ title: "File Upload Error", detail: err.message }],
+      });
+    }
+
+    let files = req.files;
+    console.log(files);
+    if (files) {
+      files.map((file) => {
+        imagesPaths.push(file);
+      });
+    }
+    const patient = await Patient.findByIdAndUpdate(
+      req.params.id,
+      { images: imagesPaths },
+      {
+        new: true,
+      }
+    );
+    if (!patient) return res.status(400).send("the images cannot be updated!");
+
+    res.send(patient);
+  });
+});
+
+router.put("/:id/deleteimage/:key", async (req, res) => {
+  console.log(req.params.key);
+  const key = req.params.key;
+  var s3 = new aws.S3();
+  s3.deleteObject(
+    {
+      Bucket: "docsrecord",
+      Key: key,
+    },
+    function (error, data) {
+      if (error) {
+        res.status(500).send(error);
+      }
+      // res.status(200).send("File has been deleted successfully");
+    }
+  );
+  const patientimg = await Patient.findById(req.params.id);
+  let imagesPaths = [];
+  let imagesPatient = patientimg.images;
+  if (imagesPatient) {
+    imagesPatient.map((file) => {
+      if (file.key !== req.params.key) imagesPaths.push(file);
+    });
+  }
+  const patient = await Patient.findByIdAndUpdate(
+    req.params.id,
+    { images: imagesPaths },
+    {
+      new: true,
+    }
+  );
+  if (!patient) return res.status(400).send("the images cannot be updated!");
+
+  res.send(patient);
+});
+//old routes
 
 router.get(`/`, async (req, res) => {
   // localhost:3000/patients?doctor=2342342
@@ -211,16 +298,6 @@ router.put("/:id", uploadOptions.array("images", 10), async (req, res) => {
       new: true,
     });
 
-    // const doctor = await Doctor.findById(patient.doctor);
-    // total_cost = total_cost + doctor.visit_charges;
-
-    // patient = await Patient.findByIdAndUpdate(
-    //   req.params.id,
-    //   { total_cost: total_cost },
-    //   {
-    //     new: true,
-    //   }
-    // );
     if (!patient) return res.status(500).send("the patient cannot be updated!");
     if (patient) {
       const directory = path.join(__dirname + "//../public/uploads/");

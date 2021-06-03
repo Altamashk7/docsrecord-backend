@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const { object } = require("twilio/lib/base/serialize");
 
 const doctorSchema = mongoose.Schema({
   email: {
@@ -32,8 +33,7 @@ const doctorSchema = mongoose.Schema({
     default: "",
   },
   image: {
-    data: Buffer,
-    contentType: String,
+    type: Object,
   },
   register_date: {
     type: Date,
